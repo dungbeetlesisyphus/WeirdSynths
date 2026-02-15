@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WeirdSynths — The EmotionSynth Ecosystem</title>
+<meta name="description" content="Premium VCV Rack Pro 2 modules connecting the physical world to modular synthesis. Your face controls your synthesizer. More coming soon.">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #0a0a0f;
+  --text: #e8e8f0;
+  --accent1: #ff2d55;
+  --accent2: #7b2ff7;
+  --accent3: #00e5ff;
+  --accent4: #ffab00;
+  --accent5: #00e676;
+  --glow1: rgba(255, 45, 85, 0.4);
+  --glow2: rgba(123, 47, 247, 0.4);
+  --glow3: rgba(0, 229, 255, 0.4);
+}
+
+body {
+  font-family: 'Space Grotesk', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  overflow-x: hidden;
+  line-height: 1.6;
+}
+
+/* ===== ANIMATED GRADIENT BACKGROUND ===== */
+.bg-canvas {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  z-index: 0;
+  background: var(--bg);
+}
+.bg-canvas::before {
+  content: '';
+  position: absolute;
+  top: -50%; left: -50%; width: 200%; height: 200%;
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(255,45,85,0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(123,47,247,0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 80%, rgba(0,229,255,0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 60%, rgba(255,171,0,0.05) 0%, transparent 40%);
+  animation: bgDrift 20s ease-in-out infinite alternate;
+}
+@keyframes bgDrift {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  33% { transform: translate(-3%, 2%) rotate(1deg); }
+  66% { transform: translate(2%, -3%) rotate(-1deg); }
+  100% { transform: translate(-1%, 1%) rotate(0.5deg); }
+}
+
+/* ===== SCANLINES ===== */
+.scanlines {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  z-index: 1;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.03) 2px,
+    rgba(0,0,0,0.03) 4px
+  );
+}
+
+/* ===== FLOATING PARTICLES ===== */
+.particles {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  z-index: 1;
+  pointer-events: none;
+}
+.particle {
+  position: absolute;
+  border-radius: 50%;
+  animation: float linear infinite;
+  opacity: 0;
+}
+@keyframes float {
+  0% { transform: translateY(100vh) scale(0); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+}
+
+.content { position: relative; z-index: 2; }
+
+/* ===== HERO ===== */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2rem;
+  position: relative;
+}
+
+.hero-badge {
+  display: inline-block;
+  padding: 6px 18px;
+  border: 1px solid var(--accent3);
+  border-radius: 50px;
+  font-size: 0.75rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--accent3);
+  margin-bottom: 2rem;
+  animation: pulseGlow 3s ease-in-out infinite;
+}
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 10px rgba(0,229,255,0.2); }
+  50% { box-shadow: 0 0 25px rgba(0,229,255,0.5); }
+}
+
+.hero-title {
+  font-size: clamp(3rem, 10vw, 8rem);
+  font-weight: 700;
+  line-height: 0.95;
+  margin-bottom: 0.5rem;
+  background: linear-gradient(135deg, var(--accent1), var(--accent2), var(--accent3));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradientShift 5s ease-in-out infinite;
+  background-size: 200% 200%;
+}
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.hero-sub {
+  font-size: clamp(1rem, 2.5vw, 1.5rem);
+  font-weight: 300;
+  color: rgba(232, 232, 240, 0.7);
+  max-width: 700px;
+  margin: 1.5rem auto 2.5rem;
+}
+
+.hero-stats {
+  display: flex;
+  gap: 3rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 3rem;
+}
+.stat {
+  text-align: center;
+}
+.stat-number {
+  font-size: 2.5rem;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+}
+.stat-number.pink { color: var(--accent1); }
+.stat-number.purple { color: var(--accent2); }
+.stat-number.cyan { color: var(--accent3); }
+.stat-number.gold { color: var(--accent4); }
+.stat-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: rgba(232,232,240,0.5);
+}
+
+.cta-group {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 32px;
+  border-radius: 50px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
+}
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent1), var(--accent2));
+  color: white;
+  box-shadow: 0 4px 25px var(--glow1);
+}
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 40px var(--glow2);
+}
+.btn-secondary {
+  background: transparent;
+  color: var(--accent3);
+  border: 1px solid var(--accent3);
+}
+.btn-secondary:hover {
+  background: rgba(0,229,255,0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px var(--glow3);
+}
+
+.scroll-indicator {
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  animation: bounce 2s ease-in-out infinite;
+  color: rgba(232,232,240,0.3);
+  font-size: 1.5rem;
+}
+@keyframes bounce {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(10px); }
+}
+
+/* ===== SECTIONS ===== */
+section {
+  padding: 6rem 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-label {
+  font-size: 0.7rem;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--accent2);
+  margin-bottom: 0.5rem;
+}
+.section-title {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 700;
+  margin-bottom: 1rem;
+  line-height: 1.1;
+}
+.section-desc {
+  font-size: 1.1rem;
+  color: rgba(232,232,240,0.65);
+  max-width: 650px;
+  margin-bottom: 3rem;
+}
+
+/* ===== PRODUCT LINE CARDS ===== */
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 1.5rem;
+}
+.product-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 16px;
+  padding: 2rem;
+  transition: all 0.4s ease;
+  position: relative;
+  overflow: hidden;
+}
+.product-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  border-radius: 16px 16px 0 0;
+}
+.product-card:hover {
+  border-color: rgba(255,255,255,0.15);
+  transform: translateY(-4px);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+}
+
+.card-pink::before { background: linear-gradient(90deg, var(--accent1), var(--accent2)); }
+.card-purple::before { background: linear-gradient(90deg, var(--accent2), #b388ff); }
+.card-cyan::before { background: linear-gradient(90deg, var(--accent3), var(--accent5)); }
+.card-gold::before { background: linear-gradient(90deg, var(--accent4), var(--accent1)); }
+.card-green::before { background: linear-gradient(90deg, var(--accent5), var(--accent3)); }
+.card-red::before { background: linear-gradient(90deg, #ff1744, var(--accent4)); }
+.card-blue::before { background: linear-gradient(90deg, #2979ff, var(--accent3)); }
+.card-violet::before { background: linear-gradient(90deg, #d500f9, var(--accent2)); }
+
+.card-icon {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+.card-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+.card-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--accent3);
+  margin-bottom: 0.75rem;
+}
+.card-desc {
+  font-size: 0.9rem;
+  color: rgba(232,232,240,0.55);
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+.card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.tag {
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  background: rgba(255,255,255,0.06);
+  color: rgba(232,232,240,0.6);
+}
+
+/* ===== MARQUEE ===== */
+.marquee-section {
+  padding: 3rem 0;
+  overflow: hidden;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.marquee {
+  display: flex;
+  animation: marquee 40s linear infinite;
+  width: max-content;
+}
+.marquee-item {
+  white-space: nowrap;
+  padding: 0 2rem;
+  font-size: 1.1rem;
+  font-weight: 300;
+  color: rgba(232,232,240,0.3);
+}
+.marquee-item span {
+  color: var(--accent2);
+  font-weight: 600;
+}
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* ===== FEATURES SHOWCASE ===== */
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 2rem;
+}
+.feature {
+  padding: 1.5rem;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.04);
+  transition: all 0.3s ease;
+}
+.feature:hover {
+  border-color: rgba(123,47,247,0.3);
+  background: rgba(123,47,247,0.05);
+}
+.feature-icon {
+  font-size: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+.feature-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+.feature-desc {
+  font-size: 0.85rem;
+  color: rgba(232,232,240,0.5);
+  line-height: 1.5;
+}
+
+/* ===== PRICING ===== */
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+.price-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 16px;
+  padding: 2rem;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+.price-card.featured {
+  border-color: var(--accent2);
+  background: rgba(123,47,247,0.08);
+  transform: scale(1.02);
+  box-shadow: 0 0 40px rgba(123,47,247,0.15);
+}
+.price-card:hover {
+  transform: translateY(-4px);
+}
+.price-label {
+  font-size: 0.7rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: rgba(232,232,240,0.4);
+  margin-bottom: 0.5rem;
+}
+.price-name {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+.price-amount {
+  font-size: 2.5rem;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  margin: 0.5rem 0;
+}
+.price-amount .currency { font-size: 1.2rem; vertical-align: top; }
+.price-detail {
+  font-size: 0.85rem;
+  color: rgba(232,232,240,0.45);
+  margin-bottom: 1.5rem;
+}
+.price-card .btn {
+  width: 100%;
+  justify-content: center;
+}
+
+/* ===== NEWSLETTER ===== */
+.newsletter {
+  text-align: center;
+  padding: 6rem 2rem;
+  max-width: 600px;
+  margin: 0 auto;
+}
+.newsletter-title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  background: linear-gradient(135deg, var(--accent4), var(--accent1));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.newsletter-desc {
+  color: rgba(232,232,240,0.55);
+  margin-bottom: 2rem;
+}
+.email-form {
+  display: flex;
+  gap: 0.5rem;
+  max-width: 450px;
+  margin: 0 auto;
+}
+.email-input {
+  flex: 1;
+  padding: 14px 20px;
+  border-radius: 50px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.05);
+  color: white;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.3s;
+}
+.email-input:focus {
+  border-color: var(--accent2);
+}
+.email-input::placeholder {
+  color: rgba(232,232,240,0.3);
+}
+
+/* ===== SOCIAL LINKS ===== */
+.social-bar {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  padding: 2rem;
+  margin-bottom: 2rem;
+}
+.social-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(232,232,240,0.5);
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: color 0.3s;
+}
+.social-link:hover { color: var(--accent3); }
+
+/* ===== FOOTER ===== */
+footer {
+  text-align: center;
+  padding: 2rem;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  color: rgba(232,232,240,0.25);
+  font-size: 0.8rem;
+}
+
+/* ===== LOCKED CARD ===== */
+.product-card.locked {
+  position: relative;
+  cursor: default;
+}
+.product-card.locked .card-desc,
+.product-card.locked .card-tags,
+.product-card.locked .card-count {
+  filter: blur(6px);
+  user-select: none;
+  -webkit-user-select: none;
+  pointer-events: none;
+}
+.product-card.locked:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: rgba(255,255,255,0.06);
+}
+.locked-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 10, 15, 0.65);
+  border-radius: 16px;
+  z-index: 5;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+.locked-icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.75rem;
+  animation: lockPulse 3s ease-in-out infinite;
+}
+@keyframes lockPulse {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+.locked-text {
+  font-size: 0.75rem;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--accent2);
+  font-weight: 600;
+}
+.locked-hint {
+  font-size: 0.75rem;
+  color: rgba(232,232,240,0.35);
+  margin-top: 0.5rem;
+  font-style: italic;
+}
+
+/* ===== CLASSIFIED BANNER ===== */
+.classified-banner {
+  text-align: center;
+  padding: 3rem 2rem;
+  max-width: 700px;
+  margin: 0 auto;
+}
+.classified-banner h3 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--accent2);
+  margin-bottom: 0.75rem;
+}
+.classified-banner p {
+  font-size: 0.95rem;
+  color: rgba(232,232,240,0.45);
+  line-height: 1.6;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .hero-stats { gap: 1.5rem; }
+  .email-form { flex-direction: column; }
+  .product-grid { grid-template-columns: 1fr; }
+  .pricing-grid { grid-template-columns: 1fr; }
+  .features-grid { grid-template-columns: 1fr; }
+}
+
+/* ===== GLITCH TEXT ===== */
+.glitch {
+  position: relative;
+}
+.glitch::before, .glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+}
+.glitch::before {
+  animation: glitch1 3s infinite;
+  clip-path: polygon(0 0, 100% 0, 100% 45%, 0 45%);
+  -webkit-text-fill-color: var(--accent1);
+  opacity: 0.8;
+}
+.glitch::after {
+  animation: glitch2 3s infinite;
+  clip-path: polygon(0 55%, 100% 55%, 100% 100%, 0 100%);
+  -webkit-text-fill-color: var(--accent3);
+  opacity: 0.8;
+}
+@keyframes glitch1 {
+  0%, 93%, 100% { transform: translate(0); }
+  94% { transform: translate(-3px, 1px); }
+  95% { transform: translate(3px, -1px); }
+  96% { transform: translate(-2px, 0); }
+}
+@keyframes glitch2 {
+  0%, 93%, 100% { transform: translate(0); }
+  94% { transform: translate(3px, -1px); }
+  95% { transform: translate(-3px, 1px); }
+  96% { transform: translate(2px, 0); }
+}
+
+/* ===== DISTORTION DIVIDER ===== */
+.distort-divider {
+  height: 100px;
+  background: linear-gradient(90deg,
+    var(--accent1), var(--accent2), var(--accent3), var(--accent4), var(--accent5), var(--accent1));
+  background-size: 200% 100%;
+  animation: gradientSlide 8s linear infinite;
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 100'%3E%3Cpath d='M0,50 Q150,0 300,50 Q450,100 600,50 Q750,0 900,50 Q1050,100 1200,50 L1200,100 L0,100Z'/%3E%3C/svg%3E");
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 100'%3E%3Cpath d='M0,50 Q150,0 300,50 Q450,100 600,50 Q750,0 900,50 Q1050,100 1200,50 L1200,100 L0,100Z'/%3E%3C/svg%3E");
+  mask-size: cover;
+  -webkit-mask-size: cover;
+  opacity: 0.6;
+}
+@keyframes gradientSlide {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 200% 0%; }
+}
+</style>
+</head>
+<body>
+
+<div class="bg-canvas"></div>
+<div class="scanlines"></div>
+<div class="particles" id="particles"></div>
+
+<div class="content">
+
+<!-- ===== HERO ===== -->
+<header class="hero">
+  <div class="hero-badge">VCV Rack Pro 2 Premium Plugin Ecosystem</div>
+  <h1 class="hero-title glitch" data-text="WeirdSynths">WeirdSynths</h1>
+  <p class="hero-sub">
+    Premium VCV Rack Pro 2 modules that connect the physical world to modular synthesis.
+    Your face. Your emotions. Your body. This is just the beginning.
+  </p>
+  <div class="hero-stats">
+    <div class="stat">
+      <div class="stat-number pink">7</div>
+      <div class="stat-label">Modules at Launch</div>
+    </div>
+    <div class="stat">
+      <div class="stat-number purple">???</div>
+      <div class="stat-label">More Coming</div>
+    </div>
+    <div class="stat">
+      <div class="stat-number cyan">1</div>
+      <div class="stat-label">Ecosystem</div>
+    </div>
+    <div class="stat">
+      <div class="stat-number gold">0</div>
+      <div class="stat-label">Competitors</div>
+    </div>
+  </div>
+  <div class="cta-group">
+    <a href="#notify" class="btn btn-primary">Get Notified at Launch</a>
+    <a href="#products" class="btn btn-secondary">Explore Modules</a>
+  </div>
+  <div class="scroll-indicator">&#x25BE;</div>
+</header>
+
+<!-- ===== MARQUEE ===== -->
+<div class="marquee-section">
+  <div class="marquee">
+    <div class="marquee-item"><span>Facial Emotions</span> controlling your filter</div>
+    <div class="marquee-item"><span>Body Tracking</span> turning movement into voltage</div>
+    <div class="marquee-item"><span>Object Detection</span> making anything a controller</div>
+    <div class="marquee-item"><span>Something impossible</span> is coming soon</div>
+    <div class="marquee-item"><span>[REDACTED]</span> you're not ready for this</div>
+    <div class="marquee-item"><span>[CLASSIFIED]</span> stay tuned</div>
+    <div class="marquee-item"><span>What if</span> your ████████ controlled your synth?</div>
+    <!-- duplicate for seamless loop -->
+    <div class="marquee-item"><span>Facial Emotions</span> controlling your filter</div>
+    <div class="marquee-item"><span>Body Tracking</span> turning movement into voltage</div>
+    <div class="marquee-item"><span>Object Detection</span> making anything a controller</div>
+    <div class="marquee-item"><span>Something impossible</span> is coming soon</div>
+    <div class="marquee-item"><span>[REDACTED]</span> you're not ready for this</div>
+    <div class="marquee-item"><span>[CLASSIFIED]</span> stay tuned</div>
+    <div class="marquee-item"><span>What if</span> your ████████ controlled your synth?</div>
+  </div>
+</div>
+
+<!-- ===== WHAT IS THIS ===== -->
+<section>
+  <div class="section-label">The Vision</div>
+  <h2 class="section-title">Every signal in the universe<br>is a modulation source.</h2>
+  <p class="section-desc">
+    WeirdSynths builds the EmotionSynth Ecosystem: premium VCV Rack Pro 2 modules that connect
+    real-world data, advanced mathematics, and cutting-edge science to voltage-controlled sound.
+    No other platform has ever attempted this.
+  </p>
+  <div class="features-grid">
+    <div class="feature">
+      <div class="feature-icon">&#x1F441;</div>
+      <div class="feature-title">Computer Vision</div>
+      <div class="feature-desc">Your face, body, hands, and objects become real-time control surfaces. Emotion detection through your webcam at launch, with body tracking, object recognition, and Kinect support (360, One, Azure) coming soon.</div>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">&#x1F3AE;</div>
+      <div class="feature-title">Live Streaming</div>
+      <div class="feature-desc">Twitch chat controls your synthesizer. TTS becomes vocoded audio. Your audience becomes part of the instrument.</div>
+    </div>
+    <div class="feature" style="border-color: rgba(123,47,247,0.2); background: rgba(123,47,247,0.03);">
+      <div class="feature-icon">&#x2753;</div>
+      <div class="feature-title" style="color: var(--accent2);">Coming Soon</div>
+      <div class="feature-desc">We're building something that has never existed in modular synthesis. Multiple new product lines are in development. Follow us to find out first.</div>
+    </div>
+    <div class="feature" style="border-color: rgba(255,45,85,0.2); background: rgba(255,45,85,0.03);">
+      <div class="feature-icon">&#x1F6A8;</div>
+      <div class="feature-title" style="color: var(--accent1);">This Changes Everything</div>
+      <div class="feature-desc">What if the laws of physics, mathematics, and the entire observable universe could control your synthesizer? Stay tuned.</div>
+    </div>
+  </div>
+</section>
+
+<div class="distort-divider"></div>
+
+<!-- ===== PRODUCT LINES ===== -->
+<section id="products">
+  <div class="section-label">Product Lines</div>
+  <h2 class="section-title">One collection launching.<br>Six more locked.</h2>
+  <p class="section-desc">
+    EmotionSynth Core is just the beginning. Six more collections are in active development,
+    each exploring a frontier that modular synthesis has never touched. Follow us to unlock the reveals.
+  </p>
+  <div class="product-grid">
+    <!-- ===== CORE: FULLY VISIBLE ===== -->
+    <div class="product-card card-pink">
+      <div class="card-icon">&#x1F3AD;</div>
+      <div class="card-title">EmotionSynth Core</div>
+      <div class="card-count">7 modules | $45</div>
+      <div class="card-desc">The flagship. Facial emotion detection, Twitch integration, and more. Body tracking, object recognition, and Kinect integration (360, One, and Azure models) planned for future updates. Your face controls your synthesizer.</div>
+      <div class="card-tags">
+        <span class="tag">Webcam</span>
+        <span class="tag">Emotion CV</span>
+        <span class="tag">Streaming</span>
+        <span class="tag" style="background:rgba(255,45,85,0.15);color:var(--accent1)">Available at Launch</span>
+      </div>
+    </div>
+
+    <!-- ===== LOCKED CARDS: NO DETAILS ===== -->
+    <div class="product-card card-purple locked">
+      <div class="locked-overlay">
+        <div class="locked-icon">&#x1F512;</div>
+        <div class="locked-text">Collection 2</div>
+        <div class="locked-hint">Something impossible is coming</div>
+      </div>
+      <div class="card-icon">&#x269B;</div>
+      <div class="card-title">????????????</div>
+      <div class="card-count">?? modules | $???</div>
+      <div class="card-desc">Classified information. This collection will redefine what you think a synthesizer module can do. Nothing like this has ever existed.</div>
+      <div class="card-tags">
+        <span class="tag">???</span>
+        <span class="tag">???</span>
+        <span class="tag">???</span>
+      </div>
+    </div>
+
+    <div class="product-card card-blue locked">
+      <div class="locked-overlay">
+        <div class="locked-icon">&#x1F512;</div>
+        <div class="locked-text">Collection 3</div>
+        <div class="locked-hint">Words become voltage</div>
+      </div>
+      <div class="card-icon">&#x1F4D6;</div>
+      <div class="card-title">????????????</div>
+      <div class="card-count">?? modules | $???</div>
+      <div class="card-desc">Classified information. A completely new paradigm for what modular synthesis can output. The signal flows in a direction nobody expected.</div>
+      <div class="card-tags">
+        <span class="tag">???</span>
+        <span class="tag">???</span>
+        <span class="tag">???</span>
+      </div>
+    </div>
+
+    <div class="product-card card-green locked">
+      <div class="locked-overlay">
+        <div class="locked-icon">&#x1F512;</div>
+        <div class="locked-text">Collection 4</div>
+        <div class="locked-hint">The world is your controller</div>
+      </div>
+      <div class="card-icon">&#x1F30F;</div>
+      <div class="card-title">????????????</div>
+      <div class="card-count">?? modules | $???</div>
+      <div class="card-desc">Classified information. Data streams from sources you never imagined. The entire physical world becomes your modulation source.</div>
+      <div class="card-tags">
+        <span class="tag">???</span>
+        <span class="tag">???</span>
+        <span class="tag">???</span>
+      </div>
+    </div>
+
+    <div class="product-card card-violet locked">
+      <div class="locked-overlay">
+        <div class="locked-icon">&#x1F512;</div>
+        <div class="locked-text">Collection 5</div>
+        <div class="locked-hint">Mathematics has never sounded like this</div>
+      </div>
+      <div class="card-icon">&#x1F300;</div>
+      <div class="card-title">????????????</div>
+      <div class="card-count">?? modules | $???</div>
+      <div class="card-desc">Classified information. The laws of space bend. Dimensions fold. This collection operates in geometries that shouldn't exist.</div>
+      <div class="card-tags">
+        <span class="tag">???</span>
+        <span class="tag">???</span>
+        <span class="tag">???</span>
+      </div>
+    </div>
+
+    <div class="product-card card-gold locked">
+      <div class="locked-overlay">
+        <div class="locked-icon">&#x1F512;</div>
+        <div class="locked-text">Collection 6</div>
+        <div class="locked-hint">Signals from the edge of reality</div>
+      </div>
+      <div class="card-icon">&#x1F52D;</div>
+      <div class="card-title">????????????</div>
+      <div class="card-count">?? modules | $???</div>
+      <div class="card-desc">Classified information. These modules connect to things you didn't know could be connected. From the subatomic to the cosmic.</div>
+      <div class="card-tags">
+        <span class="tag">???</span>
+        <span class="tag">???</span>
+        <span class="tag">???</span>
+      </div>
+    </div>
+
+    <div class="product-card card-red locked">
+      <div class="locked-overlay">
+        <div class="locked-icon">&#x1F512;</div>
+        <div class="locked-text">Collection 7</div>
+        <div class="locked-hint">Beyond what anyone thought possible</div>
+      </div>
+      <div class="card-icon">&#x26A1;</div>
+      <div class="card-title">????????????</div>
+      <div class="card-count">?? modules | $???</div>
+      <div class="card-desc">Classified information. The final frontier. When we reveal this collection, the conversation about modular synthesis changes forever.</div>
+      <div class="card-tags">
+        <span class="tag">???</span>
+        <span class="tag">???</span>
+        <span class="tag">???</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="classified-banner">
+    <h3>&#x1F50A; 6 more collections are in active development</h3>
+    <p>We're building things that have never existed in modular synthesis. Follow us on Twitter, Reddit, and Instagram to be the first to know when each collection is revealed.</p>
+  </div>
+</section>
+
+<!-- ===== PRICING ===== -->
+<section id="pricing">
+  <div class="section-label">Pricing</div>
+  <h2 class="section-title">Start weird. Go weirder.</h2>
+  <p class="section-desc">
+    EmotionSynth Core available at launch. More collections and bundle pricing revealed as each product line drops.
+  </p>
+  <div class="pricing-grid">
+    <div class="price-card">
+      <div class="price-label">Individual Modules</div>
+      <div class="price-name">Pick & Choose</div>
+      <div class="price-amount"><span class="currency">$</span>5-45</div>
+      <div class="price-detail">Buy exactly what you need. Each module sold separately.</div>
+      <a href="#notify" class="btn btn-secondary">Notify Me</a>
+    </div>
+    <div class="price-card featured">
+      <div class="price-label">Best Value at Launch</div>
+      <div class="price-name">EmotionSynth Core</div>
+      <div class="price-amount"><span class="currency">$</span>45</div>
+      <div class="price-detail">7 modules. Vision, streaming, and more. Kinect + body tracking coming soon.</div>
+      <a href="#notify" class="btn btn-primary">Notify Me</a>
+    </div>
+    <div class="price-card">
+      <div class="price-label">Add-On</div>
+      <div class="price-name">Enigma Module</div>
+      <div class="price-amount"><span class="currency">$</span>5</div>
+      <div class="price-detail">WWII Enigma cipher machine as a voltage processor. Historical encryption meets modular synthesis.</div>
+      <a href="#notify" class="btn btn-secondary">Notify Me</a>
+    </div>
+    <div class="price-card">
+      <div class="price-label">Coming Later</div>
+      <div class="price-name">Everything Bundle</div>
+      <div class="price-amount" style="filter:blur(4px);user-select:none;"><span class="currency">$</span>???</div>
+      <div class="price-detail">Every module. Every collection. One price. Revealed soon.</div>
+      <a href="#notify" class="btn btn-secondary">Notify Me</a>
+    </div>
+  </div>
+</section>
+
+<div class="distort-divider"></div>
+
+<!-- ===== NEWSLETTER ===== -->
+<div class="newsletter" id="notify">
+  <h2 class="newsletter-title">Be First to Know</h2>
+  <p class="newsletter-desc">
+    Join the WeirdSynths mailing list. Get launch announcements, early access,
+    and exclusive discounts. No spam. Just weird.
+  </p>
+  <form class="email-form" onsubmit="event.preventDefault(); this.innerHTML='<p style=&quot;color:#00e676;padding:14px&quot;>You\'re in. Welcome to weird.</p>';">
+    <input type="email" class="email-input" placeholder="your@email.com" required>
+    <button type="submit" class="btn btn-primary">Join</button>
+  </form>
+</div>
+
+<!-- ===== SOCIAL ===== -->
+<div class="social-bar">
+  <a href="https://twitter.com/WeirdSynths" class="social-link" target="_blank">&#x1D54F; Twitter / X</a>
+  <a href="https://reddit.com/r/WeirdSynths" class="social-link" target="_blank">&#x1F4AC; r/WeirdSynths</a>
+  <a href="https://instagram.com/MillieBoeBillie" class="social-link" target="_blank">&#x1F4F7; @MillieBoeBillie</a>
+</div>
+
+<footer>
+  <p>&copy; 2026 WeirdSynths. The EmotionSynth Ecosystem for VCV Rack Pro 2.</p>
+  <p style="margin-top:0.5rem; font-size:0.7rem;">Quantum physics, non-Euclidean geometry, and your face — all in one plugin ecosystem.</p>
+</footer>
+
+</div>
+
+<script>
+// Generate floating particles
+const container = document.getElementById('particles');
+const colors = ['#ff2d55','#7b2ff7','#00e5ff','#ffab00','#00e676'];
+for (let i = 0; i < 30; i++) {
+  const p = document.createElement('div');
+  p.className = 'particle';
+  const size = Math.random() * 4 + 1;
+  p.style.width = size + 'px';
+  p.style.height = size + 'px';
+  p.style.left = Math.random() * 100 + '%';
+  p.style.background = colors[Math.floor(Math.random() * colors.length)];
+  p.style.animationDuration = (Math.random() * 15 + 10) + 's';
+  p.style.animationDelay = (Math.random() * 15) + 's';
+  p.style.boxShadow = `0 0 ${size * 3}px ${p.style.background}`;
+  container.appendChild(p);
+}
+
+// Smooth scroll
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    const target = document.querySelector(a.getAttribute('href'));
+    if (target) target.scrollIntoView({ behavior: 'smooth' });
+  });
+});
+</script>
+</body>
+</html>
