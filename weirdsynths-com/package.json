@@ -1,7 +1,6 @@
 {
   "name": "weirdsynths-com",
   "version": "1.0.0",
-  "description": "WeirdSynths — Hyperdimensional Modules for VCV Rack",
   "dependencies": {
     "stripe": "^14.0.0"
   }

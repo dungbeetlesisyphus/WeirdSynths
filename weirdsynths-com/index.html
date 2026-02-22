@@ -38,10 +38,6 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:0 40px;height:60px;d
 .nav-links a:hover{color:var(--cyan)}
 .nav-cta{padding:8px 20px;border:1px solid var(--cyan);border-radius:20px;font-size:11px;letter-spacing:2px;color:var(--cyan);transition:all 0.2s;background:transparent;cursor:pointer;font-family:var(--font);text-transform:uppercase}
 .nav-cta:hover{background:var(--cyan);color:var(--bg);text-decoration:none;box-shadow:var(--glow-cyan)}
-.cart-count{background:var(--pink);color:white;font-size:9px;padding:2px 6px;border-radius:8px;margin-left:4px;display:none}
-.cart-link.has-items{color:var(--cyan)!important}
-.cart-link.bounce .cart-count{animation:cartBounce 0.5s ease}
-@keyframes cartBounce{0%{transform:scale(1)}30%{transform:scale(1.5)}60%{transform:scale(0.9)}100%{transform:scale(1)}}
 
 .hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:120px 40px 80px;position:relative;overflow:hidden}
 .hero-bg{position:absolute;inset:0;z-index:0}
@@ -82,15 +78,11 @@ section{padding:100px 40px}
 .card-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
 .card-tags span{font-size:9px;padding:3px 8px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);color:var(--dim);letter-spacing:0.5px}
 .card-footer{display:flex;justify-content:space-between;align-items:center}
-.card-price{font-size:20px;font-weight:700;font-family:var(--mono)}
-.card-price.free{color:var(--green)}
-.card-price .currency{font-size:13px;color:var(--dim);font-weight:400}
-.card-buy{padding:8px 20px;border:1px solid var(--cyan);border-radius:16px;background:transparent;color:var(--cyan);font-size:10px;letter-spacing:1px;cursor:pointer;font-family:var(--font);transition:all 0.2s;text-transform:uppercase}
-.card-buy:hover{background:var(--cyan);color:var(--bg)}
-.card-buy.in-cart{background:var(--green);color:var(--bg);border-color:var(--green)}
+.card-included{font-size:10px;color:var(--green);letter-spacing:1px;text-transform:uppercase}
 .card-image::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,transparent 40%,rgba(0,229,255,0.03) 50%,transparent 60%);background-size:200% 200%;animation:shimmer 6s ease infinite}
 @keyframes shimmer{0%{background-position:200% 200%}100%{background-position:-200% -200%}}
 
+/* ═══ PRICING ═══ */
 #pricing{background:var(--bg);position:relative;overflow:hidden}
 #pricing::before{content:'';position:absolute;top:50%;left:50%;width:600px;height:600px;background:radial-gradient(circle,rgba(0,229,255,0.04),transparent 60%);transform:translate(-50%,-50%);pointer-events:none}
 .pricing-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:20px;max-width:740px;margin:0 auto;align-items:start}
@@ -102,22 +94,19 @@ section{padding:100px 40px}
 .plan-price .currency{font-size:24px;color:var(--dim);vertical-align:top;position:relative;top:8px}
 .plan-price .period{font-size:14px;color:var(--dim);font-weight:400;margin-left:4px}
 .plan-was{font-size:11px;color:var(--pink);margin-bottom:12px;letter-spacing:0.5px}
+.plan-regional{font-size:10px;color:var(--green);margin-bottom:10px;letter-spacing:0.5px;display:none}
 .plan-desc{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:20px}
 .plan-features{list-style:none;margin-bottom:24px}
 .plan-features li{font-size:12px;color:var(--text2);padding:6px 0;border-bottom:1px solid rgba(80,80,140,0.08);position:relative;padding-left:18px}
 .plan-features li::before{content:'';position:absolute;left:0;top:50%;width:6px;height:6px;border-radius:50%;background:var(--cyan);transform:translateY(-50%)}
-.primary-plan .plan-features li::before{background:var(--cyan);box-shadow:0 0 8px rgba(0,229,255,0.3)}
+.primary-plan .plan-features li::before{box-shadow:0 0 8px rgba(0,229,255,0.3)}
 .btn-plan-primary{width:100%;padding:14px;background:var(--cyan);color:var(--bg);border:none;border-radius:24px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);letter-spacing:1px;text-transform:uppercase;transition:all 0.2s}
 .btn-plan-primary:hover{box-shadow:var(--glow-cyan);transform:translateY(-1px)}
 .btn-plan-secondary{width:100%;padding:14px;background:transparent;color:var(--text);border:1px solid var(--border);border-radius:24px;font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font);letter-spacing:1px;text-transform:uppercase;transition:all 0.2s;text-align:center;display:block;text-decoration:none}
 .btn-plan-secondary:hover{border-color:var(--text2);text-decoration:none}
 .plan-note{text-align:center;font-size:10px;color:var(--dim);margin-top:12px;letter-spacing:0.5px}
-.pricing-counter{text-align:center;margin-top:40px;padding:16px;border:1px solid var(--border);border-radius:var(--radius);max-width:400px;margin-left:auto;margin-right:auto;background:var(--surface)}
-.counter-label{font-size:11px;color:var(--text2);letter-spacing:1px}
-.counter-value{font-size:28px;font-weight:700;color:var(--pink);font-family:var(--mono);margin:0 8px}
-.counter-note{font-size:10px;color:var(--dim)}
-@media(max-width:768px){.pricing-grid{grid-template-columns:1fr}.primary-plan{transform:none;order:-1}}
 
+/* ═══ FEATURES ═══ */
 #features{background:var(--bg)}
 .features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:1000px;margin:0 auto}
 .feature-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px;transition:border-color 0.3s}
@@ -126,6 +115,7 @@ section{padding:100px 40px}
 .feature-card h3{font-size:14px;font-weight:600;margin-bottom:8px;letter-spacing:0.5px}
 .feature-card p{font-size:12px;color:var(--text2);line-height:1.7}
 
+/* ═══ DEMOS ═══ */
 #demos{background:var(--bg2)}
 .demo-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:1000px;margin:0 auto}
 .demo-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:all 0.3s}
@@ -138,6 +128,7 @@ section{padding:100px 40px}
 .demo-launch{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border:1px solid var(--pink);border-radius:16px;background:transparent;color:var(--pink);font-size:10px;letter-spacing:1px;cursor:pointer;font-family:var(--font);transition:all 0.2s;text-transform:uppercase;text-decoration:none}
 .demo-launch:hover{background:var(--pink);color:white;text-decoration:none}
 
+/* ═══ COMMUNITY ═══ */
 #community{background:var(--bg)}
 .testimonial-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;max-width:1000px;margin:0 auto}
 .testimonial{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px}
@@ -145,6 +136,7 @@ section{padding:100px 40px}
 .testimonial .author{font-size:11px;color:var(--dim);letter-spacing:1px}
 .testimonial .author strong{color:var(--text);font-weight:500}
 
+/* ═══ CTA ═══ */
 #cta{background:var(--bg2);text-align:center;padding:80px 40px;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
 #cta h2{font-size:clamp(24px,3vw,36px);font-weight:700;margin-bottom:12px}
 #cta p{font-size:14px;color:var(--text2);margin-bottom:28px}
@@ -155,50 +147,26 @@ section{padding:100px 40px}
 .email-form button{padding:12px 24px;background:var(--cyan);color:var(--bg);border:none;border-radius:24px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);letter-spacing:1px;transition:all 0.2s;text-transform:uppercase}
 .email-form button:hover{box-shadow:var(--glow-cyan)}
 
-footer{padding:48px 40px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);font-size:11px;color:var(--dim)}
+footer{padding:48px 40px;display:flex;justify-content:space-between;align-items:flex-start;border-top:1px solid var(--border);font-size:11px;color:var(--dim)}
 .footer-links{display:flex;gap:20px}
 .footer-links a{color:var(--dim);font-size:11px;letter-spacing:1px;text-transform:uppercase}
 .footer-links a:hover{color:var(--text)}
-
-/* Cart drawer */
-.cart-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;opacity:0;pointer-events:none;transition:opacity 0.3s}
-.cart-overlay.open{opacity:1;pointer-events:auto}
-.cart-drawer{position:fixed;top:0;right:0;bottom:0;width:380px;background:var(--surface);border-left:1px solid var(--border);z-index:201;transform:translateX(100%);transition:transform 0.3s;display:flex;flex-direction:column}
-.cart-drawer.open{transform:translateX(0)}
-.cart-header{padding:20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
-.cart-header h3{font-size:14px;letter-spacing:2px}
-.cart-close{background:none;border:none;color:var(--text);font-size:20px;cursor:pointer}
-.cart-items{flex:1;overflow-y:auto;padding:16px}
-.cart-item{display:flex;justify-content:space-between;align-items:center;padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-bottom:8px}
-.cart-item-name{font-size:13px;font-weight:500}
-.cart-item-price{font-size:14px;font-weight:700;font-family:var(--mono);color:var(--cyan)}
-.cart-item-remove{background:none;border:none;color:var(--dim);cursor:pointer;font-size:16px;padding:0 4px}
-.cart-item-remove:hover{color:var(--pink)}
-.cart-footer{padding:20px;border-top:1px solid var(--border)}
-.cart-total{display:flex;justify-content:space-between;margin-bottom:16px;font-size:16px;font-weight:600}
-.cart-total .amount{font-family:var(--mono);color:var(--cyan)}
-.cart-checkout{width:100%;padding:14px;background:var(--cyan);color:var(--bg);border:none;border-radius:24px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);letter-spacing:1px;text-transform:uppercase;transition:all 0.2s}
-.cart-checkout:hover{box-shadow:var(--glow-cyan)}
-.cart-checkout:disabled{background:var(--surface3);color:var(--dim);cursor:default;box-shadow:none}
-.cart-empty{text-align:center;padding:40px;color:var(--dim);font-size:13px}
 
 .toast{position:fixed;bottom:24px;right:24px;padding:14px 24px;background:var(--surface2);border:1px solid var(--green);border-radius:var(--radius);color:var(--green);font-size:12px;letter-spacing:1px;z-index:300;transform:translateY(100px);opacity:0;transition:all 0.4s}
 .toast.show{transform:translateY(0);opacity:1}
 
 @keyframes fadeUp{0%{opacity:0;transform:translateY(30px)}100%{opacity:1;transform:translateY(0)}}
 .animate-in{opacity:0;animation:fadeUp 0.8s ease forwards}
-.animate-in:nth-child(2){animation-delay:0.1s}
-.animate-in:nth-child(3){animation-delay:0.2s}
-.animate-in:nth-child(4){animation-delay:0.3s}
 
 @media(max-width:768px){
   nav{padding:0 20px}
-  .nav-links a:not(.nav-cta):not(.cart-link){display:none}
+  .nav-links a:not(.nav-cta){display:none}
   section{padding:60px 20px}
   .hero{padding:100px 20px 60px}
   .hero-stats{gap:24px;flex-wrap:wrap}
   .product-grid,.features-grid,.demo-grid,.testimonial-grid{grid-template-columns:1fr}
-  .cart-drawer{width:100%}
+  .pricing-grid{grid-template-columns:1fr}
+  .primary-plan{transform:none;order:-1}
   footer{flex-direction:column;gap:16px;text-align:center}
 }
 </style>
@@ -215,8 +183,7 @@ footer{padding:48px 40px;display:flex;justify-content:space-between;align-items:
     <a href="#pricing">Pricing</a>
     <a href="#demos">Demos</a>
     <a href="#community">Community</a>
-    <a href="javascript:void(0)" class="cart-link" onclick="toggleCart()" style="position:relative">CART <span class="cart-count" id="cartCount">0</span></a>
-    <a href="#modules" class="nav-cta">Browse Store</a>
+    <a href="#pricing" class="nav-cta">Get the Plugin</a>
   </div>
 </nav>
 
@@ -227,11 +194,11 @@ footer{padding:48px 40px;display:flex;justify-content:space-between;align-items:
     <h1>Modules from <span class="gradient">another dimension</span></h1>
     <p>Face-tracking CV. Emotion-reactive synthesis. Non-Euclidean signal processing. WeirdSynths builds the modules that don't exist yet.</p>
     <div class="hero-actions">
-      <a href="#pricing" class="btn-primary">Get the Plugin — $50</a>
+      <a href="#pricing" class="btn-primary" id="heroCta">Get the Plugin — $50</a>
       <a href="#modules" class="btn-secondary">Browse Modules</a>
     </div>
     <div class="hero-stats">
-      <div class="stat"><div class="stat-value">12</div><div class="stat-label">Modules</div></div>
+      <div class="stat"><div class="stat-value">8</div><div class="stat-label">Modules</div></div>
       <div class="stat"><div class="stat-value">22</div><div class="stat-label">CV Channels</div></div>
       <div class="stat"><div class="stat-value">4D</div><div class="stat-label">Dimensions</div></div>
       <div class="stat"><div class="stat-value">468</div><div class="stat-label">Face Landmarks</div></div>
@@ -241,9 +208,9 @@ footer{padding:48px 40px;display:flex;justify-content:space-between;align-items:
 
 <section id="modules">
   <div class="section-header">
-    <span class="section-tag">The Store</span>
-    <h2>Hyperdimensional Modules</h2>
-    <p>Each module explores synthesis territory no one else has touched. Possible future VCV Rack supported tools.</p>
+    <span class="section-tag">What's Included</span>
+    <h2>8 Hyperdimensional Modules</h2>
+    <p>All included in the plugin. Possible future VCV Rack supported tools.</p>
   </div>
   <div class="product-grid" id="productGrid"></div>
 </section>
@@ -252,28 +219,31 @@ footer{padding:48px 40px;display:flex;justify-content:space-between;align-items:
   <div class="section-header">
     <span class="section-tag">Pricing</span>
     <h2>Get In Now. Price Goes Up.</h2>
-    <p>The plugin suite costs $50 today. Every time we add a module, the price rises. Lock in lifetime access at $256 before it's gone.</p>
+    <p>The plugin costs <span id="pluginPriceText">$50</span> today. Every time we add a module, the price rises. Lock in lifetime access before it's gone.</p>
   </div>
   <div class="pricing-grid">
     <div class="pricing-card primary-plan">
       <div class="plan-badge-glow"></div>
       <div class="plan-tag" style="color:var(--cyan)">Full Plugin Suite</div>
-      <div class="plan-price"><span class="currency">$</span>50<span class="period"></span></div>
+      <div class="plan-price"><span class="currency">$</span><span id="pluginPrice">50</span></div>
       <div class="plan-was">Price will increase as modules are added</div>
+      <div class="plan-regional" id="pluginRegional"></div>
       <p class="plan-desc">All 8 modules. One payment. Updates included for all current modules.</p>
       <ul class="plan-features">
         <li>All 8 current modules included</li>
         <li>One-time payment</li>
         <li>Updates for life on current modules</li>
         <li>OSSUARY always free</li>
+        <li>Sales tax covered — you pay exactly this price</li>
         <li>Price goes up with every new release</li>
       </ul>
-      <button class="btn-plan-primary" onclick="buyPlugin()">Buy Now — $50</button>
-      <div class="plan-note">Sales tax included. We cover it.</div>
+      <button class="btn-plan-primary" id="pluginBtn" onclick="buyPlugin()">Buy Now — $50</button>
+      <div class="plan-note">Tax included. We cover it.</div>
     </div>
     <div class="pricing-card tertiary-plan">
       <div class="plan-tag">Lifetime Access</div>
-      <div class="plan-price"><span class="currency">$</span>256<span class="period">/forever</span></div>
+      <div class="plan-price"><span class="currency">$</span><span id="lifetimePrice">256</span><span class="period">/forever</span></div>
+      <div class="plan-regional" id="lifetimeRegional"></div>
       <p class="plan-desc">Everything we've built and everything we'll ever build. Every future module, every update, forever.</p>
       <ul class="plan-features">
         <li>All current + all future modules</li>
@@ -281,14 +251,10 @@ footer{padding:48px 40px;display:flex;justify-content:space-between;align-items:
         <li>Early access to beta builds</li>
         <li>Priority feature requests</li>
         <li>Founding supporter status</li>
+        <li>Sales tax covered by us</li>
       </ul>
-      <button class="btn-plan-secondary" onclick="buyLifetime()">Buy Lifetime — $256</button>
+      <button class="btn-plan-secondary" id="lifetimeBtn" onclick="buyLifetime()">Buy Lifetime — $256</button>
     </div>
-  </div>
-  <div class="pricing-counter">
-    <span class="counter-label">Early-bird slots remaining:</span>
-    <span class="counter-value" id="slotsLeft">47</span>
-    <span class="counter-note">of 100 founding subscribers</span>
   </div>
 </section>
 
@@ -304,7 +270,7 @@ footer{padding:48px 40px;display:flex;justify-content:space-between;align-items:
     <div class="feature-card"><span class="feature-icon">🎭</span><h3>Emotion Engine</h3><p>8-emotion classification with hysteresis and double-smoothing. Joy, Surprise, Anger, Sadness, Fear, Calm, Focus, Awe.</p></div>
     <div class="feature-card"><span class="feature-icon">⚡</span><h3>22 CV Channels</h3><p>8 position channels, 8 emotion channels, 6 color channels. Every parameter is a modulation source.</p></div>
     <div class="feature-card"><span class="feature-icon">🔮</span><h3>4D Navigation</h3><p>Interfaces traversed through the 4th dimension. Panels exist at different W coordinates in hyperspace.</p></div>
-    <div class="feature-card"><span class="feature-icon">🎯</span><h3>Momentum Model</h3><p>Velocity-based camera with configurable friction. Steer a spacecraft with your expressions.</p></div>
+    <div class="feature-card"><span class="feature-icon">🎯</span><h3>Bidirectional MIDI</h3><p>Full MIDI I/O. Face movements → MIDI CC to your hardware. MIDI in → control face parameters. Works with all major manufacturers.</p></div>
   </div>
 </section>
 
@@ -315,8 +281,8 @@ footer{padding:48px 40px;display:flex;justify-content:space-between;align-items:
     <p>Run these in your browser. No install required.</p>
   </div>
   <div class="demo-grid">
-    <div class="demo-card"><div class="demo-preview" style="background:linear-gradient(135deg,#080818,#0a1628)">👁</div><div class="demo-info"><h3>Face→CV 4D Navigator</h3><p>Full face tracking + emotion engine + 3D scene + CV outputs. Traversed through the 4th dimension.</p><a href="face-cv-4d.html" class="demo-launch" target="_blank">Launch Demo →</a></div></div>
-    <div class="demo-card"><div class="demo-preview" style="background:linear-gradient(135deg,#180818,#0d0d20)">🌀</div><div class="demo-info"><h3>Non-Euclidean Engine</h3><p>WebGL2 ray marcher with hyperbolic, spherical, and Euclidean geometry. WASD navigation.</p><a href="non-euclidean-engine.html" class="demo-launch" target="_blank">Launch Demo →</a></div></div>
+    <div class="demo-card"><div class="demo-preview" style="background:linear-gradient(135deg,#080818,#0a1628)">👁</div><div class="demo-info"><h3>Face→CV Navigator</h3><p>Full face tracking + emotion engine + 3D scene + CV outputs.</p><a href="face-cv-navigator.html" class="demo-launch" target="_blank">Launch Demo →</a></div></div>
+    <div class="demo-card"><div class="demo-preview" style="background:linear-gradient(135deg,#180818,#0d0d20)">🎹</div><div class="demo-info"><h3>MIDI Bridge</h3><p>Bidirectional MIDI. Connect face tracking to any hardware synth.</p><a href="face-cv-midi-bridge.html" class="demo-launch" target="_blank">Launch Demo →</a></div></div>
   </div>
 </section>
 
@@ -349,54 +315,39 @@ footer{padding:48px 40px;display:flex;justify-content:space-between;align-items:
   <div class="footer-links"><a href="#">GitHub</a><a href="#">Discord</a><a href="#">Contact</a></div>
 </footer>
 
-<!-- CART DRAWER -->
-<div class="cart-overlay" id="cartOverlay" onclick="toggleCart()"></div>
-<div class="cart-drawer" id="cartDrawer">
-  <div class="cart-header"><h3>YOUR CART</h3><button class="cart-close" onclick="toggleCart()">×</button></div>
-  <div class="cart-items" id="cartItems"><div class="cart-empty">Your cart is empty</div></div>
-  <div class="cart-footer">
-    <div class="cart-total"><span>Total</span><span class="amount" id="cartTotal">$0</span></div>
-    <button class="cart-checkout" id="cartCheckoutBtn" onclick="checkout()" disabled>Checkout with Stripe</button>
-  </div>
-</div>
-
-<div class="toast" id="toast">Added to cart</div>
+<div class="toast" id="toast"></div>
 
 <script>
 // ═══════════════════════════════════════════
-//  PRODUCT CATALOG
+//  MODULE CATALOG (all included in plugin)
 // ═══════════════════════════════════════════
 const PRODUCTS = [
-  { id:'face-cv', name:'Face-CV Navigator', price:7, icon:'👁', badge:'popular', badgeClass:'badge-popular',
+  { id:'face-cv', name:'Face-CV Navigator', icon:'👁', badge:'popular', badgeClass:'badge-popular',
     desc:'Real-time face tracking to CV. 468 landmarks, 8-emotion engine, velocity/momentum camera model. Your face becomes a modulation source.',
     tags:['Face Tracking','CV','Emotion','MediaPipe'], gradient:'#0a1628,#0d0d20' },
-  { id:'iris', name:'IRIS', price:3, icon:'🌀', badge:'new', badgeClass:'badge-new',
+  { id:'iris', name:'IRIS', icon:'🌀', badge:'new', badgeClass:'badge-new',
     desc:'Spectral morphing oscillator with 4D wavetable navigation. Traverse timbral hyperspace with CV control over the W axis.',
     tags:['Oscillator','Spectral','4D','Wavetable'], gradient:'#180a28,#0d0d20' },
-  { id:'emotionlfo', name:'EmotionLFO', price:5, icon:'🎭', badge:null,
+  { id:'emotionlfo', name:'EmotionLFO', icon:'🎭', badge:null,
     desc:'8-channel LFO driven by facial emotion classification. Joy speeds up, sadness slows down, anger adds chaos.',
     tags:['LFO','Emotion','Generative','8-ch'], gradient:'#0a2818,#0d0d20' },
-  { id:'penrose', name:'PenroseEngine', price:7, icon:'🔮', badge:null,
+  { id:'penrose', name:'PenroseEngine', icon:'🔮', badge:null,
     desc:'Non-Euclidean delay network. Signal paths curve through hyperbolic space. Feedback that physically cannot exist in flat geometry.',
     tags:['Delay','Non-Euclidean','Feedback','Spatial'], gradient:'#28180a,#0d0d20' },
-  { id:'void', name:'VoidReverb', price:4, icon:'🕳', badge:null,
+  { id:'void', name:'VoidReverb', icon:'🕳', badge:null,
     desc:'Reverb with negative space. Inverted rooms, Klein bottle reflections, tesseract chambers.',
     tags:['Reverb','Spatial','Impossible'], gradient:'#0a1828,#0d0d20' },
-  { id:'geofilter', name:'GeoFilter', price:3, icon:'🌊', badge:null,
+  { id:'geofilter', name:'GeoFilter', icon:'🌊', badge:null,
     desc:'Filter whose topology changes with CV. Morph between ladder, SVF, comb, and formant — actually warping the circuit geometry.',
     tags:['Filter','Morphing','Topology'], gradient:'#1a0a28,#0d0d20' },
-  { id:'portal', name:'PortalMixer', price:6, icon:'🔀', badge:null,
+  { id:'portal', name:'PortalMixer', icon:'🔀', badge:null,
     desc:'8-channel mixer where channels pass through spatial portals. Pan position wraps through non-Euclidean space.',
     tags:['Mixer','Spatial','8-ch','Portal'], gradient:'#0a2020,#0d0d20' },
-  { id:'ossuary', name:'OSSUARY', price:0, icon:'💀', badge:'free', badgeClass:'badge-free',
+  { id:'ossuary', name:'OSSUARY', icon:'💀', badge:'free', badgeClass:'badge-free',
     desc:'Bone-resonance physical modeler. Simulates acoustic properties of skeletal structures. Eerie, organic timbres.',
     tags:['Physical Model','Organic','Free'], gradient:'#10100a,#0d0d20' },
 ];
 
-const PLUGIN_PRICE = 50; // $50 one-time
-const LIFETIME_PRICE = 256; // $256 lifetime access
-
-// Render product grid
 const grid = document.getElementById('productGrid');
 PRODUCTS.forEach(p => {
   const card = document.createElement('div');
@@ -411,118 +362,57 @@ PRODUCTS.forEach(p => {
       <div class="card-desc">${p.desc}</div>
       <div class="card-tags">${p.tags.map(t => `<span>${t}</span>`).join('')}</div>
       <div class="card-footer">
-        <span class="card-price ${p.price === 0 ? 'free' : ''}">${p.price > 0 ? `<span class="currency">$</span>${p.price}` : 'FREE'}</span>
-        <button class="card-buy" id="buy-${p.id}" onclick="addToCart('${p.id}')">${p.price > 0 ? 'Add to Cart' : 'Download'}</button>
+        <span class="card-included">${p.badge === 'free' ? '✓ Always Free' : '✓ Included in Plugin'}</span>
       </div>
     </div>`;
   grid.appendChild(card);
 });
 
 // ═══════════════════════════════════════════
-//  CART SYSTEM
+//  REGIONAL PRICING — fetch from server
 // ═══════════════════════════════════════════
-let cart = [];
-
-function addToCart(id) {
-  if (cart.find(item => item.id === id)) return;
-  const product = PRODUCTS.find(p => p.id === id);
-  if (!product) return;
-  cart.push({ id, name: product.name, price: product.price });
-
-  // Update button
-  const btn = document.getElementById(`buy-${id}`);
-  if (btn) { btn.textContent = 'In Cart'; btn.classList.add('in-cart'); }
-
-  updateCartUI();
-  showToast(`${product.name} added to cart`);
-
-  // Bounce the cart icon and auto-open drawer
-  const cartLink = document.querySelector('.cart-link');
-  cartLink.classList.add('has-items', 'bounce');
-  setTimeout(() => cartLink.classList.remove('bounce'), 600);
-
-  // Open cart drawer automatically
-  if (!document.getElementById('cartDrawer').classList.contains('open')) {
-    toggleCart();
-  }
-}
-
-function removeFromCart(id) {
-  cart = cart.filter(item => item.id !== id);
-  const btn = document.getElementById(`buy-${id}`);
-  const product = PRODUCTS.find(p => p.id === id);
-  if (btn) { btn.textContent = product?.price > 0 ? 'Add to Cart' : 'Download'; btn.classList.remove('in-cart'); }
-  updateCartUI();
-}
-
-function updateCartUI() {
-  const count = document.getElementById('cartCount');
-  const items = document.getElementById('cartItems');
-  const total = document.getElementById('cartTotal');
-  const checkBtn = document.getElementById('cartCheckoutBtn');
-
-  count.textContent = cart.length;
-  count.style.display = cart.length > 0 ? 'inline' : 'none';
-
-  if (cart.length === 0) {
-    items.innerHTML = '<div class="cart-empty">Your cart is empty</div>';
-    checkBtn.disabled = true;
-  } else {
-    items.innerHTML = cart.map(item => `
-      <div class="cart-item">
-        <div>
-          <div class="cart-item-name">${item.name}</div>
-        </div>
-        <div style="display:flex;align-items:center;gap:12px">
-          <span class="cart-item-price">${item.price > 0 ? '$' + item.price : 'FREE'}</span>
-          <button class="cart-item-remove" onclick="removeFromCart('${item.id}')">×</button>
-        </div>
-      </div>`).join('');
-    checkBtn.disabled = false;
-  }
-
-  const sum = cart.reduce((s, i) => s + i.price, 0);
-  total.textContent = '$' + sum;
-}
-
-function toggleCart() {
-  document.getElementById('cartOverlay').classList.toggle('open');
-  document.getElementById('cartDrawer').classList.toggle('open');
-}
-
-// ═══════════════════════════════════════════
-//  STRIPE CHECKOUT
-// ═══════════════════════════════════════════
-async function checkout() {
-  const btn = document.getElementById('cartCheckoutBtn');
-  btn.textContent = 'Processing...';
-  btn.disabled = true;
-
+async function loadRegionalPricing() {
   try {
     const res = await fetch('/api/checkout', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ items: cart.map(i => ({ id: i.id })) }),
+      body: JSON.stringify({ action: 'get-prices' }),
     });
-
     const data = await res.json();
 
-    if (data.url) {
-      window.location.href = data.url;
-    } else {
-      throw new Error(data.error || 'Checkout failed');
+    if (data.isRegional) {
+      const pluginDollars = (data.plugin / 100);
+      const lifetimeDollars = (data.lifetime / 100);
+
+      // Update all price displays
+      document.getElementById('pluginPrice').textContent = pluginDollars;
+      document.getElementById('lifetimePrice').textContent = lifetimeDollars;
+      document.getElementById('pluginBtn').textContent = `Buy Now — $${pluginDollars}`;
+      document.getElementById('lifetimeBtn').textContent = `Buy Lifetime — $${lifetimeDollars}`;
+      document.getElementById('heroCta').textContent = `Get the Plugin — $${pluginDollars}`;
+      document.getElementById('pluginPriceText').textContent = `$${pluginDollars}`;
+
+      // Show regional pricing note
+      const pluginNote = document.getElementById('pluginRegional');
+      const lifetimeNote = document.getElementById('lifetimeRegional');
+      pluginNote.textContent = `Regional pricing applied (${data.country}) — normally $50`;
+      pluginNote.style.display = 'block';
+      lifetimeNote.textContent = `Regional pricing applied (${data.country}) — normally $256`;
+      lifetimeNote.style.display = 'block';
     }
-  } catch (err) {
-    showToast('Checkout error: ' + err.message);
-    btn.textContent = 'Checkout with Stripe';
-    btn.disabled = false;
+  } catch (e) {
+    // Fail silently — show default USD prices
   }
 }
+loadRegionalPricing();
 
 // ═══════════════════════════════════════════
-//  PLUGIN + LIFETIME CHECKOUT
+//  CHECKOUT
 // ═══════════════════════════════════════════
 async function buyPlugin() {
+  const btn = document.getElementById('pluginBtn');
+  btn.textContent = 'Processing...';
+  btn.disabled = true;
   try {
     const res = await fetch('/api/checkout', {
       method: 'POST',
@@ -534,10 +424,15 @@ async function buyPlugin() {
     else throw new Error(data.error || 'Checkout failed');
   } catch (err) {
     showToast('Error: ' + err.message);
+    btn.textContent = 'Buy Now — $50';
+    btn.disabled = false;
   }
 }
 
 async function buyLifetime() {
+  const btn = document.getElementById('lifetimeBtn');
+  btn.textContent = 'Processing...';
+  btn.disabled = true;
   try {
     const res = await fetch('/api/checkout', {
       method: 'POST',
@@ -549,6 +444,8 @@ async function buyLifetime() {
     else throw new Error(data.error || 'Checkout failed');
   } catch (err) {
     showToast('Error: ' + err.message);
+    btn.textContent = 'Buy Lifetime — $256';
+    btn.disabled = false;
   }
 }
 
