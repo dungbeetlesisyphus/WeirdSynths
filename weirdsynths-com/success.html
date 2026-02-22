@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Purchase Complete — WeirdSynths</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#050508;--surface:#0e0e18;--surface2:#141420;--border:rgba(80,80,140,0.15);--text:#d8d8e8;--text2:#9898b0;--dim:#555570;--cyan:#00e5ff;--pink:#ff3d71;--green:#00e676}
+body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',system-ui,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center}
+.container{text-align:center;max-width:560px;padding:40px}
+.icon{font-size:64px;margin-bottom:24px}
+h1{font-size:28px;font-weight:700;margin-bottom:12px}
+.subtitle{font-size:14px;color:var(--text2);line-height:1.7;margin-bottom:8px}
+.plan-badge{display:inline-block;padding:6px 16px;border:1px solid var(--cyan);border-radius:20px;font-size:10px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;margin-bottom:24px}
+.download-section{margin-top:32px;text-align:left}
+.download-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:12px;padding:16px 20px;margin-bottom:10px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.download-card h3{font-size:14px;font-weight:600}
+.download-card .desc{font-size:11px;color:var(--dim);margin-top:3px}
+.dl-btn{
+  padding:8px 20px;border:1px solid var(--cyan);border-radius:16px;
+  background:transparent;color:var(--cyan);font-size:10px;letter-spacing:1px;
+  cursor:pointer;font-family:inherit;text-transform:uppercase;transition:all 0.2s;
+  text-decoration:none;white-space:nowrap;
+}
+.dl-btn:hover{background:var(--cyan);color:var(--bg)}
+.loading{color:var(--dim);font-size:13px;padding:40px}
+.loading .spinner{display:inline-block;width:20px;height:20px;border:2px solid var(--dim);border-top-color:var(--cyan);border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.error{color:var(--pink);font-size:13px;padding:20px;border:1px solid rgba(255,61,113,0.2);border-radius:12px;background:rgba(255,61,113,0.05)}
+.back-link{color:var(--cyan);font-size:12px;letter-spacing:1px;text-decoration:none}
+.back-link:hover{text-decoration:underline}
+.tax-note{font-size:10px;color:var(--dim);margin-top:16px;letter-spacing:0.5px}
+</style>
+</head>
+<body>
+<div class="container">
+  <div id="content">
+    <div class="loading">
+      <div class="spinner"></div>
+      <p>Verifying your purchase...</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const MODULES = {
+  'face-cv': { name: 'Face-CV Navigator', file: 'WeirdSynths-FaceCV.vcvplugin' },
+  'iris': { name: 'IRIS', file: 'WeirdSynths-IRIS.vcvplugin' },
+  'emotionlfo': { name: 'EmotionLFO', file: 'WeirdSynths-EmotionLFO.vcvplugin' },
+  'penrose': { name: 'PenroseEngine', file: 'WeirdSynths-PenroseEngine.vcvplugin' },
+  'void': { name: 'VoidReverb', file: 'WeirdSynths-VoidReverb.vcvplugin' },
+  'geofilter': { name: 'GeoFilter', file: 'WeirdSynths-GeoFilter.vcvplugin' },
+  'portal': { name: 'PortalMixer', file: 'WeirdSynths-PortalMixer.vcvplugin' },
+  'ossuary': { name: 'OSSUARY', file: 'WeirdSynths-OSSUARY.vcvplugin' },
+};
+
+const container = document.getElementById('content');
+const params = new URLSearchParams(window.location.search);
+const sessionId = params.get('session_id');
+const freeItems = params.get('free');
+const plan = params.get('plan');
+
+async function init() {
+  // Free items — no verification needed (OSSUARY etc)
+  if (freeItems && !sessionId) {
+    const ids = freeItems.split(',').filter(id => MODULES[id]);
+    if (ids.length === 0) {
+      showError('No valid modules found.');
+      return;
+    }
+    showDownloads(ids, null);
+    return;
+  }
+
+  // Paid purchase — verify with Stripe via our serverless function
+  if (sessionId) {
+    try {
+      const res = await fetch('/api/verify-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: sessionId }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        showError(err.error || 'Could not verify purchase.');
+        return;
+      }
+
+      const data = await res.json();
+      showDownloads(data.modules, data.plan);
+    } catch (err) {
+      showError('Could not connect to server. Please try refreshing.');
+    }
+    return;
+  }
+
+  // No session, no free items — show error
+  showError('No purchase information found. If you just completed a purchase, check your email for download links.');
+}
+
+function showDownloads(moduleIds, planType) {
+  let title = 'Welcome to another dimension';
+  let subtitle = 'Your purchase is complete. Download your modules below.';
+  let badgeText = null;
+
+  if (planType === 'plugin-suite' || plan === 'plugin') {
+    title = 'Welcome to another dimension';
+    subtitle = 'Plugin suite unlocked. All 8 modules are yours with lifetime updates.';
+    badgeText = 'PLUGIN SUITE';
+  } else if (planType === 'lifetime-access' || plan === 'lifetime') {
+    title = 'You\'re a founding supporter';
+    subtitle = 'Lifetime access activated. Every module we ever build is yours — forever.';
+    badgeText = 'LIFETIME ACCESS — FOUNDING SUPPORTER';
+  }
+
+  let html = `
+    <div class="icon">✨</div>
+    <h1>${title}</h1>
+    ${badgeText ? `<div class="plan-badge">${badgeText}</div>` : ''}
+    <p class="subtitle">${subtitle}</p>
+    <div class="download-section">
+  `;
+
+  moduleIds.forEach(id => {
+    const mod = MODULES[id];
+    if (!mod) return;
+    html += `
+      <div class="download-card">
+        <div>
+          <h3>${mod.name}</h3>
+          <div class="desc">${mod.file}</div>
+        </div>
+        <a href="/downloads/${mod.file}" class="dl-btn">Download</a>
+      </div>`;
+  });
+
+  html += `
+    </div>
+    <div class="tax-note">Sales tax included — we cover it.</div>
+    <p style="margin-top:24px"><a href="/" class="back-link">← Back to WeirdSynths</a></p>
+  `;
+
+  container.innerHTML = html;
+}
+
+function showError(msg) {
+  container.innerHTML = `
+    <div class="icon">⚠️</div>
+    <h1>Something went wrong</h1>
+    <div class="error">${msg}</div>
+    <p style="margin-top:24px"><a href="/" class="back-link">← Back to WeirdSynths</a></p>
+  `;
+}
+
+init();
+</script>
+</body>
+</html>
