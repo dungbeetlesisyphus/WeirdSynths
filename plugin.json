@@ -43,6 +43,16 @@
         "External",
         "Utility"
       ]
+    },
+    {
+      "slug": "Voice",
+      "name": "VOICE",
+      "description": "Vocal pitch tracker — V/Oct, gate, envelope, onset, brightness, harmonics from audio",
+      "tags": [
+        "Controller",
+        "Utility",
+        "Polyphonic"
+      ]
     }
   ]
 }

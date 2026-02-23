@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns="http://www.w3.org/2000/svg"
+   width="40.64mm"
+   height="128.5mm"
+   viewBox="0 0 40.64 128.5">
+
+  <defs>
+    <style>
+      .panel-bg { fill: #0a0a0f; }
+      .panel-border { fill: none; stroke: #1a1a2a; stroke-width: 0.3; }
+      .title { font-family: 'Share Tech Mono', 'Courier New', monospace; fill: #5cffb0; font-size: 3.2px; font-weight: bold; letter-spacing: 0.8px; }
+      .brand { font-family: 'Share Tech Mono', 'Courier New', monospace; fill: #444466; font-size: 1.6px; text-anchor: middle; }
+      .label { font-family: 'Share Tech Mono', 'Courier New', monospace; fill: #8888aa; font-size: 1.8px; text-anchor: middle; }
+      .label-sm { font-family: 'Share Tech Mono', 'Courier New', monospace; fill: #666688; font-size: 1.4px; text-anchor: middle; }
+      .display-border { fill: none; stroke: #1a2a1a; stroke-width: 0.3; }
+      .display-bg { fill: #050a05; }
+    </style>
+  </defs>
+
+  <!-- Panel background -->
+  <rect class="panel-bg" x="0" y="0" width="40.64" height="128.5" />
+  <rect class="panel-border" x="0.15" y="0.15" width="40.34" height="128.2" rx="0.3" />
+
+  <!-- Title -->
+  <text class="title" x="4" y="5.5">VOICE</text>
+  <text class="brand" x="20.32" y="126">WeirdSynths</text>
+
+  <!-- Pitch display area (NanoVG will draw here) -->
+  <rect class="display-bg" x="3" y="8" width="34.64" height="22" rx="1" />
+  <rect class="display-border" x="3" y="8" width="34.64" height="22" rx="1" />
+
+  <!-- Knob labels -->
+  <text class="label-sm" x="10.5" y="38">SENS</text>
+  <text class="label-sm" x="30.14" y="38">SMTH</text>
+  <text class="label-sm" x="20.32" y="52">TONE</text>
+
+  <!-- I/O labels -->
+  <text class="label-sm" x="10.5" y="64">IN</text>
+  <text class="label-sm" x="30.14" y="64">THRU</text>
+
+  <text class="label-sm" x="10.5" y="78">V/OCT</text>
+  <text class="label-sm" x="30.14" y="78">GATE</text>
+
+  <text class="label-sm" x="10.5" y="92">ENV</text>
+  <text class="label-sm" x="30.14" y="92">ONST</text>
+
+  <text class="label-sm" x="10.5" y="106">BRT</text>
+  <text class="label-sm" x="30.14" y="106">HARM</text>
+
+</svg>

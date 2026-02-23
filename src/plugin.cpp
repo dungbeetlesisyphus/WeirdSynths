@@ -9,4 +9,5 @@ void init(Plugin* p) {
     p->addModel(modelNerve);
     p->addModel(modelSkull);
     p->addModel(modelMirror);
+    p->addModel(modelVoice);
 }

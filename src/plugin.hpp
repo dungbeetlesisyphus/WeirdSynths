@@ -10,3 +10,4 @@ extern Plugin* pluginInstance;
 extern Model* modelNerve;
 extern Model* modelSkull;
 extern Model* modelMirror;
+extern Model* modelVoice;
