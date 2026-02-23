@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WeirdSynths — Module Reference</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #06060a;
+    --panel: #0a0a12;
+    --border: #1a1a2a;
+    --phosphor: #5cffb0;
+    --phosphor-dim: #2a7a50;
+    --text: #9999bb;
+    --text-dim: #555570;
+    --text-bright: #ccccdd;
+    --purple: #7c5cff;
+    --purple-dim: #4a3599;
+    --red: #ff5c5c;
+    --yellow: #ffcc5c;
+    --blue: #5cacff;
+    --card-bg: #0d0d18;
+  }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Share Tech Mono', 'Courier New', monospace;
+    min-height: 100vh;
+  }
+  a { color: var(--phosphor); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  body::after {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px);
+    pointer-events: none;
+    z-index: 9999;
+  }
+  nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 32px;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+  }
+  .nav-brand { font-size: 16px; color: var(--purple); font-weight: bold; letter-spacing: 3px; }
+  .nav-links { display: flex; gap: 24px; }
+  .nav-links a { color: var(--text-dim); font-size: 12px; letter-spacing: 1px; text-transform: uppercase; transition: color 0.2s; }
+  .nav-links a:hover, .nav-links a.active { color: var(--phosphor); text-decoration: none; }
+
+  .page-header {
+    padding: 48px 32px 32px;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+  .page-header h1 {
+    font-size: 28px;
+    color: var(--text-bright);
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+  }
+  .page-header p {
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+
+  /* Module Sections */
+  .module-section {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 32px 64px;
+  }
+  .module-header {
+    display: flex;
+    align-items: flex-end;
+    gap: 16px;
+    padding-bottom: 16px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .module-header h2 {
+    font-size: 24px;
+    letter-spacing: 4px;
+  }
+  .module-header .hp {
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    padding-bottom: 3px;
+  }
+  .nerve-accent { color: var(--purple); border-color: var(--purple-dim); }
+  .skull-accent { color: var(--red); border-color: #993535; }
+  .mirror-accent { color: var(--phosphor); border-color: var(--phosphor-dim); }
+  .voice-accent { color: var(--blue); border-color: #35699a; }
+
+  .module-desc {
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.8;
+    margin-bottom: 24px;
+    max-width: 700px;
+  }
+
+  .module-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  @media (max-width: 700px) { .module-grid { grid-template-columns: 1fr; } }
+
+  .io-panel {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    padding: 20px;
+  }
+  .io-panel h3 {
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+  }
+  th {
+    text-align: left;
+    color: var(--text-dim);
+    font-weight: normal;
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--border);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-size: 9px;
+  }
+  td {
+    padding: 8px;
+    border-bottom: 1px solid rgba(26,26,42,0.5);
+    color: var(--text);
+  }
+  td:first-child {
+    font-weight: bold;
+    white-space: nowrap;
+  }
+
+  .port-type {
+    font-size: 9px;
+    padding: 2px 6px;
+    border: 1px solid var(--border);
+    display: inline-block;
+    letter-spacing: 0.5px;
+  }
+  .pt-cv { color: var(--phosphor); border-color: var(--phosphor-dim); }
+  .pt-audio { color: var(--purple); border-color: var(--purple-dim); }
+  .pt-gate { color: var(--yellow); border-color: #99792a; }
+  .pt-trigger { color: var(--red); border-color: #993535; }
+  .pt-voct { color: var(--blue); border-color: #35699a; }
+  .pt-poly { color: #ff99ff; border-color: #993399; }
+
+  .params-panel {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    padding: 20px;
+  }
+  .params-panel h3 {
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .param-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(26,26,42,0.5);
+    font-size: 11px;
+  }
+  .param-name { color: var(--text-bright); }
+  .param-range { color: var(--text-dim); }
+
+  .signal-flow {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    padding: 20px;
+    margin-bottom: 24px;
+    font-size: 11px;
+    line-height: 2;
+    color: var(--text-dim);
+    white-space: pre;
+    overflow-x: auto;
+  }
+  .signal-flow .highlight { color: var(--phosphor); }
+
+  .patch-tips {
+    margin-top: 20px;
+  }
+  .patch-tips h3 {
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .tip {
+    background: var(--card-bg);
+    border-left: 2px solid var(--purple-dim);
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    font-size: 11px;
+    color: var(--text);
+    line-height: 1.7;
+  }
+  .tip strong { color: var(--text-bright); }
+
+  .module-divider {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 32px;
+  }
+  .module-divider hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin-bottom: 48px;
+  }
+
+  footer {
+    text-align: center;
+    padding: 32px;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 40px;
+  }
+
+  @media (max-width: 600px) {
+    nav { padding: 12px 16px; flex-direction: column; gap: 12px; }
+    .page-header, .module-section { padding-left: 16px; padding-right: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">WEIRDSYNTHS</div>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="modules.html" class="active">Modules</a>
+    <a href="guide.html">Get Started</a>
+    <a href="board.html">Dev Board</a>
+  </div>
+</nav>
+
+<div class="page-header">
+  <h1>Module Reference</h1>
+  <p>Complete I/O documentation, parameters, and patch tips for every WeirdSynths module.</p>
+</div>
+
+<!-- ════════════════════════════════════════ NERVE ════════════════════════════════════════ -->
+<div class="module-section" id="nerve">
+  <div class="module-header nerve-accent">
+    <h2>NERVE</h2>
+    <span class="hp">20 HP &middot; Face &rarr; CV</span>
+  </div>
+  <p class="module-desc">The core face-tracking module. Receives 468 MediaPipe face landmarks via UDP and converts facial gestures into calibrated CV signals. Each facial region (eyes, brows, jaw, mouth, head rotation) outputs independent voltages. Polyphonic output bundles all channels for one-cable routing.</p>
+
+  <div class="signal-flow">WEBCAM &rarr; <span class="highlight">nerve_bridge.py</span> &rarr; UDP:9000 &rarr; <span class="highlight">NERVE</span> &rarr; CV outputs (0-10V / &plusmn;5V)</div>
+
+  <div class="module-grid">
+    <div class="io-panel">
+      <h3>Outputs</h3>
+      <table>
+        <tr><th>Port</th><th>Signal</th><th>Range</th></tr>
+        <tr><td>L EYE</td><td><span class="port-type pt-cv">CV</span></td><td>0 &ndash; 10V</td></tr>
+        <tr><td>R EYE</td><td><span class="port-type pt-cv">CV</span></td><td>0 &ndash; 10V</td></tr>
+        <tr><td>L BROW</td><td><span class="port-type pt-cv">CV</span></td><td>0 &ndash; 10V</td></tr>
+        <tr><td>R BROW</td><td><span class="port-type pt-cv">CV</span></td><td>0 &ndash; 10V</td></tr>
+        <tr><td>JAW</td><td><span class="port-type pt-cv">CV</span></td><td>0 &ndash; 10V</td></tr>
+        <tr><td>MOUTH W</td><td><span class="port-type pt-cv">CV</span></td><td>0 &ndash; 10V</td></tr>
+        <tr><td>MOUTH H</td><td><span class="port-type pt-cv">CV</span></td><td>0 &ndash; 10V</td></tr>
+        <tr><td>HEAD X</td><td><span class="port-type pt-cv">CV</span></td><td>&plusmn;5V</td></tr>
+        <tr><td>HEAD Y</td><td><span class="port-type pt-cv">CV</span></td><td>&plusmn;5V</td></tr>
+        <tr><td>HEAD Z</td><td><span class="port-type pt-cv">CV</span></td><td>&plusmn;5V</td></tr>
+        <tr><td>TONGUE</td><td><span class="port-type pt-cv">CV</span></td><td>0 &ndash; 10V</td></tr>
+        <tr><td>POLY</td><td><span class="port-type pt-poly">POLY</span></td><td>all channels</td></tr>
+      </table>
+    </div>
+    <div class="params-panel">
+      <h3>Parameters</h3>
+      <div class="param-row"><span class="param-name">SMOOTH</span><span class="param-range">0 &ndash; 100%</span></div>
+      <div class="param-row"><span class="param-name">SCALE</span><span class="param-range">0 &ndash; 200%</span></div>
+      <div class="param-row"><span class="param-name">OFFSET</span><span class="param-range">&plusmn;5V</span></div>
+      <h3 style="margin-top:20px">Requirements</h3>
+      <div class="param-row"><span class="param-name">Python bridge</span><span class="param-range">nerve_bridge.py</span></div>
+      <div class="param-row"><span class="param-name">Webcam</span><span class="param-range">any USB/built-in</span></div>
+      <div class="param-row"><span class="param-name">UDP port</span><span class="param-range">9000</span></div>
+    </div>
+  </div>
+
+  <div class="patch-tips">
+    <h3>Patch Tips</h3>
+    <div class="tip"><strong>Brow filter sweep:</strong> Connect L BROW &rarr; VCF cutoff input. Raise your eyebrow to open the filter. Use SMOOTH at ~40% to prevent jitter.</div>
+    <div class="tip"><strong>Jaw as VCA:</strong> Connect JAW &rarr; VCA level. Open your mouth to let sound through. Great for rhythmic gating.</div>
+    <div class="tip"><strong>Head pan:</strong> Route HEAD X to a stereo pan module. Tilt your head to pan the sound across the stereo field.</div>
+  </div>
+</div>
+
+<div class="module-divider"><hr></div>
+
+<!-- ════════════════════════════════════════ SKULL ════════════════════════════════════════ -->
+<div class="module-section" id="skull">
+  <div class="module-header skull-accent">
+    <h2>SKULL</h2>
+    <span class="hp">12 HP &middot; Face &rarr; Drums</span>
+  </div>
+  <p class="module-desc">A face-controlled drum machine. Blinks trigger kicks, jaw movements fire snares, eyebrow raises hit hi-hats. Built-in analog-modeled percussion synthesis means you don't need external sound sources — just patch the outputs to a mixer and start performing.</p>
+
+  <div class="signal-flow">WEBCAM &rarr; <span class="highlight">nerve_bridge.py</span> &rarr; UDP:9001 &rarr; <span class="highlight">SKULL</span> &rarr; drum audio + triggers</div>
+
+  <div class="module-grid">
+    <div class="io-panel">
+      <h3>Outputs</h3>
+      <table>
+        <tr><th>Port</th><th>Signal</th><th>Source</th></tr>
+        <tr><td>KICK</td><td><span class="port-type pt-audio">AUDIO</span></td><td>Blink (either eye)</td></tr>
+        <tr><td>SNARE</td><td><span class="port-type pt-audio">AUDIO</span></td><td>Jaw open</td></tr>
+        <tr><td>HAT</td><td><span class="port-type pt-audio">AUDIO</span></td><td>Eyebrow raise</td></tr>
+        <tr><td>K TRG</td><td><span class="port-type pt-trigger">TRIG</span></td><td>Kick trigger out</td></tr>
+        <tr><td>S TRG</td><td><span class="port-type pt-trigger">TRIG</span></td><td>Snare trigger out</td></tr>
+        <tr><td>H TRG</td><td><span class="port-type pt-trigger">TRIG</span></td><td>Hat trigger out</td></tr>
+        <tr><td>MIX</td><td><span class="port-type pt-audio">AUDIO</span></td><td>All drums mixed</td></tr>
+      </table>
+    </div>
+    <div class="params-panel">
+      <h3>Parameters</h3>
+      <div class="param-row"><span class="param-name">KICK TUNE</span><span class="param-range">30 &ndash; 200 Hz</span></div>
+      <div class="param-row"><span class="param-name">KICK DECAY</span><span class="param-range">20 &ndash; 500ms</span></div>
+      <div class="param-row"><span class="param-name">SNARE TONE</span><span class="param-range">0 &ndash; 100%</span></div>
+      <div class="param-row"><span class="param-name">SNARE DECAY</span><span class="param-range">20 &ndash; 400ms</span></div>
+      <div class="param-row"><span class="param-name">HAT TONE</span><span class="param-range">0 &ndash; 100%</span></div>
+      <div class="param-row"><span class="param-name">HAT DECAY</span><span class="param-range">10 &ndash; 300ms</span></div>
+      <div class="param-row"><span class="param-name">SENS</span><span class="param-range">0 &ndash; 100%</span></div>
+      <h3 style="margin-top:20px">Requirements</h3>
+      <div class="param-row"><span class="param-name">UDP port</span><span class="param-range">9001</span></div>
+    </div>
+  </div>
+
+  <div class="patch-tips">
+    <h3>Patch Tips</h3>
+    <div class="tip"><strong>External processing:</strong> Take individual drum outputs (KICK, SNARE, HAT) to separate effects chains — reverb on snare, distortion on kick.</div>
+    <div class="tip"><strong>Trigger sequencing:</strong> Use trigger outputs (K TRG, S TRG, H TRG) to fire external drum modules or samplers for hybrid face+machine beats.</div>
+    <div class="tip"><strong>Sensitivity tuning:</strong> Start SENS around 60%. Too low = missed triggers. Too high = accidental fires from talking or micro-expressions.</div>
+  </div>
+</div>
+
+<div class="module-divider"><hr></div>
+
+<!-- ════════════════════════════════════════ MIRROR ════════════════════════════════════════ -->
+<div class="module-section" id="mirror">
+  <div class="module-header mirror-accent">
+    <h2>MIRROR</h2>
+    <span class="hp">14 HP &middot; Face &rarr; Display</span>
+  </div>
+  <p class="module-desc">A dot-matrix CRT display that renders your face in green phosphor wireframe. Uses the same face landmark data as NERVE and SKULL, giving you visual feedback of what your face is doing while you perform. The display updates at ~30fps with phosphor persistence and scanline effects.</p>
+
+  <div class="signal-flow">WEBCAM &rarr; <span class="highlight">nerve_bridge.py</span> &rarr; UDP:9002 &rarr; <span class="highlight">MIRROR</span> &rarr; CRT display</div>
+
+  <div class="module-grid">
+    <div class="io-panel">
+      <h3>Display Features</h3>
+      <table>
+        <tr><th>Element</th><th>Description</th></tr>
+        <tr><td>Face mesh</td><td>Green phosphor wireframe of face contour</td></tr>
+        <tr><td>Eyes</td><td>Tracked eye outlines with blink detection</td></tr>
+        <tr><td>Brows</td><td>Eyebrow position indicators</td></tr>
+        <tr><td>Mouth</td><td>Lip contour wireframe</td></tr>
+        <tr><td>Nose</td><td>Nose bridge and tip markers</td></tr>
+        <tr><td>Scanlines</td><td>CRT scanline overlay effect</td></tr>
+        <tr><td>Vignette</td><td>Edge darkening for CRT authenticity</td></tr>
+      </table>
+    </div>
+    <div class="params-panel">
+      <h3>Parameters</h3>
+      <div class="param-row"><span class="param-name">BRIGHTNESS</span><span class="param-range">0 &ndash; 100%</span></div>
+      <div class="param-row"><span class="param-name">PERSISTENCE</span><span class="param-range">0 &ndash; 100%</span></div>
+      <h3 style="margin-top:20px">Requirements</h3>
+      <div class="param-row"><span class="param-name">UDP port</span><span class="param-range">9002</span></div>
+    </div>
+  </div>
+
+  <div class="patch-tips">
+    <h3>Patch Tips</h3>
+    <div class="tip"><strong>Performance setup:</strong> Place MIRROR next to NERVE in your rack for instant visual feedback while performing. You'll see exactly what the tracking sees.</div>
+    <div class="tip"><strong>High persistence:</strong> Crank PERSISTENCE for a ghostly trail effect — your face leaves phosphor afterglow as you move.</div>
+  </div>
+</div>
+
+<div class="module-divider"><hr></div>
+
+<!-- ════════════════════════════════════════ VOICE ════════════════════════════════════════ -->
+<div class="module-section" id="voice">
+  <div class="module-header voice-accent">
+    <h2>VOICE</h2>
+    <span class="hp">8 HP &middot; Audio &rarr; CV</span>
+  </div>
+  <p class="module-desc">A real-time vocal analysis toolkit. Sing, hum, or play any monophonic audio source — VOICE extracts pitch (V/Oct), amplitude envelope, onset transients, spectral brightness, and harmonic content. The CRT display shows the detected note with a tuning indicator. No bridge required — works with any VCV audio input.</p>
+
+  <div class="signal-flow">MIC / AUDIO IN &rarr; <span class="highlight">VOICE</span> &rarr; V/Oct, Gate, Env, Onset, Brightness, Harmonics</div>
+
+  <div class="module-grid">
+    <div class="io-panel">
+      <h3>Inputs &amp; Outputs</h3>
+      <table>
+        <tr><th>Port</th><th>Signal</th><th>Description</th></tr>
+        <tr><td>IN</td><td><span class="port-type pt-audio">AUDIO</span></td><td>Audio input (mic, instrument, etc.)</td></tr>
+        <tr><td>THRU</td><td><span class="port-type pt-audio">AUDIO</span></td><td>Pass-through of input signal</td></tr>
+        <tr><td>V/OCT</td><td><span class="port-type pt-voct">V/OCT</span></td><td>Detected pitch, 1V/octave (C4 = 0V)</td></tr>
+        <tr><td>GATE</td><td><span class="port-type pt-gate">GATE</span></td><td>10V when voiced sound detected</td></tr>
+        <tr><td>ENV</td><td><span class="port-type pt-cv">CV</span></td><td>Amplitude envelope (0 &ndash; 10V)</td></tr>
+        <tr><td>ONST</td><td><span class="port-type pt-trigger">TRIG</span></td><td>1ms pulse on transient onset</td></tr>
+        <tr><td>BRT</td><td><span class="port-type pt-cv">CV</span></td><td>Spectral brightness (0 &ndash; 10V)</td></tr>
+        <tr><td>HARM</td><td><span class="port-type pt-poly">POLY</span></td><td>Harmonics as polyphonic V/Oct</td></tr>
+      </table>
+    </div>
+    <div class="params-panel">
+      <h3>Parameters</h3>
+      <div class="param-row"><span class="param-name">SENS</span><span class="param-range">0 &ndash; 100%</span></div>
+      <div class="param-row"><span class="param-name">SMOOTH</span><span class="param-range">0 &ndash; 100%</span></div>
+      <div class="param-row"><span class="param-name">TONE</span><span class="param-range">0 &ndash; 100%</span></div>
+      <h3 style="margin-top:20px">Quality Modes (Context Menu)</h3>
+      <div class="param-row"><span class="param-name">Light</span><span class="param-range">512 samples, ~11ms</span></div>
+      <div class="param-row"><span class="param-name">Balanced</span><span class="param-range">1024 samples, ~23ms</span></div>
+      <div class="param-row"><span class="param-name">Premium</span><span class="param-range">2048 samples, ~46ms</span></div>
+      <h3 style="margin-top:20px">Display</h3>
+      <div class="param-row"><span class="param-name">CRT readout</span><span class="param-range">Note + octave + cents</span></div>
+    </div>
+  </div>
+
+  <div class="patch-tips">
+    <h3>Patch Tips</h3>
+    <div class="tip"><strong>Sing to control a synth:</strong> V/OCT &rarr; oscillator pitch, GATE &rarr; VCA/envelope. Hum a melody and hear it played back through any synth voice.</div>
+    <div class="tip"><strong>Harmonic drone:</strong> HARM poly output &rarr; polyphonic oscillator. Sing one note, get a full harmonic series chord. Beautiful with detuned saws or FM voices.</div>
+    <div class="tip"><strong>Expressive filter:</strong> BRT &rarr; VCF cutoff. Your voice's brightness naturally opens and closes the filter. Whisper = dark, shout = bright.</div>
+    <div class="tip"><strong>Rhythmic triggering:</strong> ONST &rarr; clock input or envelope trigger. Percussive vocal sounds ("tch", "kk", "pff") become rhythmic triggers for sequencers.</div>
+  </div>
+</div>
+
+<footer>
+  <div>WeirdSynths &copy; 2025-2026 Millicent &middot; GPL-3.0</div>
+</footer>
+
+</body>
+</html>

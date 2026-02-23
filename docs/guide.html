@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WeirdSynths — Getting Started</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #06060a;
+    --panel: #0a0a12;
+    --border: #1a1a2a;
+    --phosphor: #5cffb0;
+    --phosphor-dim: #2a7a50;
+    --text: #9999bb;
+    --text-dim: #555570;
+    --text-bright: #ccccdd;
+    --purple: #7c5cff;
+    --purple-dim: #4a3599;
+    --red: #ff5c5c;
+    --yellow: #ffcc5c;
+    --blue: #5cacff;
+    --card-bg: #0d0d18;
+    --code-bg: #0c0c16;
+  }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Share Tech Mono', 'Courier New', monospace;
+    min-height: 100vh;
+  }
+  a { color: var(--phosphor); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  body::after {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px);
+    pointer-events: none;
+    z-index: 9999;
+  }
+  nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 32px;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+  }
+  .nav-brand { font-size: 16px; color: var(--purple); font-weight: bold; letter-spacing: 3px; }
+  .nav-links { display: flex; gap: 24px; }
+  .nav-links a { color: var(--text-dim); font-size: 12px; letter-spacing: 1px; text-transform: uppercase; transition: color 0.2s; }
+  .nav-links a:hover, .nav-links a.active { color: var(--phosphor); text-decoration: none; }
+
+  .content {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 48px 32px 80px;
+  }
+  h1 {
+    font-size: 28px;
+    color: var(--text-bright);
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+  }
+  .subtitle {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-bottom: 48px;
+  }
+
+  h2 {
+    font-size: 16px;
+    color: var(--phosphor);
+    letter-spacing: 2px;
+    margin-bottom: 20px;
+    padding-top: 40px;
+  }
+  h2 .step-num {
+    display: inline-block;
+    width: 28px;
+    height: 28px;
+    line-height: 28px;
+    text-align: center;
+    border: 1px solid var(--phosphor);
+    margin-right: 12px;
+    font-size: 13px;
+  }
+
+  p {
+    font-size: 13px;
+    line-height: 1.8;
+    margin-bottom: 16px;
+  }
+
+  .code-block {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    padding: 16px 20px;
+    margin: 16px 0 24px;
+    overflow-x: auto;
+    font-size: 12px;
+    line-height: 1.8;
+    color: var(--text);
+    position: relative;
+  }
+  .code-block .comment { color: var(--text-dim); }
+  .code-block .cmd { color: var(--phosphor); }
+  .code-block .flag { color: var(--purple); }
+  .code-block .output { color: var(--text-dim); font-style: italic; }
+
+  .copy-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-family: inherit;
+    font-size: 10px;
+    padding: 4px 10px;
+    cursor: pointer;
+    letter-spacing: 1px;
+  }
+  .copy-btn:hover { color: var(--phosphor); border-color: var(--phosphor-dim); }
+
+  .prereq-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 16px 0 24px;
+  }
+  @media (max-width: 600px) { .prereq-grid { grid-template-columns: 1fr; } }
+  .prereq {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    padding: 14px 16px;
+  }
+  .prereq-name {
+    font-size: 12px;
+    color: var(--text-bright);
+    margin-bottom: 4px;
+  }
+  .prereq-detail {
+    font-size: 10px;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+
+  .note {
+    background: rgba(124, 92, 255, 0.06);
+    border-left: 2px solid var(--purple);
+    padding: 12px 16px;
+    margin: 16px 0;
+    font-size: 12px;
+    color: var(--text);
+    line-height: 1.7;
+  }
+  .note strong { color: var(--purple); }
+
+  .warning {
+    background: rgba(255, 92, 92, 0.06);
+    border-left: 2px solid var(--red);
+    padding: 12px 16px;
+    margin: 16px 0;
+    font-size: 12px;
+    color: var(--text);
+    line-height: 1.7;
+  }
+  .warning strong { color: var(--red); }
+
+  .patch-diagram {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    padding: 24px;
+    margin: 20px 0;
+    font-size: 12px;
+    line-height: 2;
+    white-space: pre;
+    overflow-x: auto;
+    color: var(--text-dim);
+  }
+  .patch-diagram .module { color: var(--phosphor); }
+  .patch-diagram .wire { color: var(--purple); }
+  .patch-diagram .label { color: var(--text); }
+
+  .checklist {
+    margin: 16px 0 24px;
+    padding-left: 0;
+    list-style: none;
+  }
+  .checklist li {
+    font-size: 12px;
+    padding: 8px 0 8px 28px;
+    position: relative;
+    border-bottom: 1px solid rgba(26,26,42,0.5);
+    color: var(--text);
+  }
+  .checklist li::before {
+    content: '[ ]';
+    position: absolute;
+    left: 0;
+    color: var(--phosphor-dim);
+  }
+
+  footer {
+    text-align: center;
+    padding: 32px;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  @media (max-width: 600px) {
+    nav { padding: 12px 16px; flex-direction: column; gap: 12px; }
+    .content { padding: 32px 16px 60px; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">WEIRDSYNTHS</div>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="modules.html">Modules</a>
+    <a href="guide.html" class="active">Get Started</a>
+    <a href="board.html">Dev Board</a>
+  </div>
+</nav>
+
+<div class="content">
+
+<h1>Getting Started</h1>
+<p class="subtitle">From zero to face-controlled synthesis in about 10 minutes.</p>
+
+<!-- ═══ PREREQUISITES ═══ -->
+<h2><span class="step-num">0</span> PREREQUISITES</h2>
+<p>Before you start, make sure you have these installed:</p>
+<div class="prereq-grid">
+  <div class="prereq">
+    <div class="prereq-name">VCV Rack 2</div>
+    <div class="prereq-detail">Free or Pro edition. Download from <a href="https://vcvrack.com">vcvrack.com</a></div>
+  </div>
+  <div class="prereq">
+    <div class="prereq-name">Python 3.9+</div>
+    <div class="prereq-detail">For the face-tracking bridge. Check with: python3 --version</div>
+  </div>
+  <div class="prereq">
+    <div class="prereq-name">Webcam</div>
+    <div class="prereq-detail">Any USB or built-in camera. 720p minimum recommended.</div>
+  </div>
+  <div class="prereq">
+    <div class="prereq-name">pip (Python packages)</div>
+    <div class="prereq-detail">mediapipe, opencv-python, numpy (installed in step 2)</div>
+  </div>
+</div>
+<div class="note"><strong>VOICE module only?</strong> If you just want pitch tracking, skip steps 2-3. VOICE works with any audio input — no bridge or webcam needed.</div>
+
+<!-- ═══ STEP 1 ═══ -->
+<h2><span class="step-num">1</span> INSTALL THE PLUGIN</h2>
+<p>Download the latest release for your platform from GitHub and copy it into VCV Rack's plugin folder:</p>
+
+<div class="code-block">
+<span class="comment"># macOS (Apple Silicon)</span>
+<span class="cmd">cp -r</span> WeirdSynths ~/Library/Application\ Support/Rack2/plugins-mac-arm64/
+
+<span class="comment"># macOS (Intel)</span>
+<span class="cmd">cp -r</span> WeirdSynths ~/Library/Application\ Support/Rack2/plugins-mac-x64/
+
+<span class="comment"># Linux</span>
+<span class="cmd">cp -r</span> WeirdSynths ~/.Rack2/plugins/
+
+<span class="comment"># Windows</span>
+<span class="cmd">copy</span> WeirdSynths %LOCALAPPDATA%\Rack2\plugins\
+</div>
+
+<p>Restart VCV Rack completely (Cmd+Q / Alt+F4, then relaunch). You should see NERVE, SKULL, MIRROR, and VOICE in the module browser under "WeirdSynths".</p>
+
+<div class="warning"><strong>Not showing up?</strong> Make sure you fully quit Rack (not just close the window). Check the Rack log at <code>~/.Rack2/log.txt</code> for errors.</div>
+
+<!-- ═══ STEP 2 ═══ -->
+<h2><span class="step-num">2</span> INSTALL THE PYTHON BRIDGE</h2>
+<p>The bridge runs face tracking on your webcam and sends landmark data to VCV Rack over UDP. Install the required Python packages:</p>
+
+<div class="code-block">
+<span class="cmd">pip3 install</span> mediapipe opencv-python numpy
+</div>
+
+<p>That's it. The bridge script itself is included with the plugin source code at <code>bridge/nerve_bridge.py</code>.</p>
+
+<!-- ═══ STEP 3 ═══ -->
+<h2><span class="step-num">3</span> START THE BRIDGE</h2>
+<p>Open a terminal and run the bridge:</p>
+
+<div class="code-block">
+<span class="cmd">python3</span> bridge/nerve_bridge.py
+
+<span class="comment"># You should see:</span>
+<span class="output">[NERVE BRIDGE] Starting face tracker...</span>
+<span class="output">[NERVE BRIDGE] Camera opened (1280x720)</span>
+<span class="output">[NERVE BRIDGE] Sending to ports: [9000, 9001, 9002]</span>
+<span class="output">[NERVE BRIDGE] Tracking active — 468 landmarks</span>
+</div>
+
+<p>A preview window will open showing the webcam feed with face landmark overlay. Position yourself so your face is clearly visible and well-lit.</p>
+
+<div class="note"><strong>Multiple cameras?</strong> Use <code>--camera 1</code> to select a different camera index. <code>--camera 0</code> is usually the default.</div>
+
+<div class="note"><strong>Custom ports?</strong> Use <code>--port 9000 9001 9002</code> to specify which UDP ports to send to. Each module listens on its own port: NERVE=9000, SKULL=9001, MIRROR=9002.</div>
+
+<!-- ═══ STEP 4 ═══ -->
+<h2><span class="step-num">4</span> YOUR FIRST PATCH: FACE FILTER SWEEP</h2>
+<p>The simplest and most satisfying first patch: control a filter with your eyebrow.</p>
+
+<div class="patch-diagram"><span class="module">VCV Audio</span> <span class="wire">&rarr;</span> <span class="label">audio in to your DAW/speakers</span>
+
+<span class="module">VCO-1</span> <span class="label">(Saw wave)</span>
+  <span class="wire">OUT &rarr;</span> <span class="module">VCF</span> <span class="label">IN</span>
+
+<span class="module">NERVE</span>
+  <span class="wire">L BROW &rarr;</span> <span class="module">VCF</span> <span class="label">CUTOFF CV (attenuate to ~50%)</span>
+
+<span class="module">VCF</span>
+  <span class="wire">OUT &rarr;</span> <span class="module">VCA</span> <span class="wire">&rarr;</span> <span class="module">Audio</span></div>
+
+<ul class="checklist">
+  <li>Add a VCO (e.g., VCV VCO-1), set to SAW wave</li>
+  <li>Add a VCF (e.g., VCV VCF), patch VCO out &rarr; VCF in</li>
+  <li>Add NERVE from the WeirdSynths brand in the module browser</li>
+  <li>Patch NERVE's L BROW output &rarr; VCF's cutoff CV input</li>
+  <li>Attenuate the CV to ~50% so it doesn't sweep too aggressively</li>
+  <li>Patch VCF out &rarr; Audio module output</li>
+  <li>Raise your left eyebrow — the filter should open up</li>
+</ul>
+
+<p>Once that's working, try connecting JAW to a VCA's CV input — open your mouth to let sound through. Instant expressive control.</p>
+
+<!-- ═══ STEP 5 ═══ -->
+<h2><span class="step-num">5</span> FACE DRUMS WITH SKULL</h2>
+<p>For instant gratification, just add SKULL and patch its MIX output to your audio:</p>
+
+<div class="patch-diagram"><span class="module">SKULL</span>
+  <span class="wire">MIX &rarr;</span> <span class="module">Audio</span> <span class="label">IN</span>
+
+<span class="label">That's it. Now:</span>
+  <span class="label">Blink &rarr; Kick</span>
+  <span class="label">Open jaw &rarr; Snare</span>
+  <span class="label">Raise brows &rarr; Hi-hat</span></div>
+
+<p>Adjust SENS if triggers are too sensitive or not sensitive enough. Start around 60% and tune from there.</p>
+
+<!-- ═══ STEP 6 ═══ -->
+<h2><span class="step-num">6</span> SING TO CONTROL A SYNTH WITH VOICE</h2>
+<p>VOICE doesn't need the bridge — it works with any audio input. Set up VCV Audio as an input, then:</p>
+
+<div class="patch-diagram"><span class="module">Audio</span> <span class="label">(mic input)</span>
+  <span class="wire">OUT &rarr;</span> <span class="module">VOICE</span> <span class="label">IN</span>
+
+<span class="module">VOICE</span>
+  <span class="wire">V/OCT &rarr;</span> <span class="module">VCO-1</span> <span class="label">V/OCT</span>
+  <span class="wire">GATE &rarr;</span> <span class="module">ADSR</span> <span class="label">GATE</span>
+  <span class="wire">ENV &rarr;</span> <span class="module">VCA</span> <span class="label">CV</span>
+
+<span class="module">VCO-1</span> <span class="wire">&rarr;</span> <span class="module">VCF</span> <span class="wire">&rarr;</span> <span class="module">VCA</span> <span class="wire">&rarr;</span> <span class="module">Audio</span> <span class="label">OUT</span></div>
+
+<p>Hum or sing a note. The CRT display on VOICE shows the detected pitch. The VCO tracks your voice, and the gate opens when you're producing voiced sound. You're now a human oscillator controller.</p>
+
+<div class="note"><strong>Quality modes:</strong> Right-click VOICE to change quality. "Light" is fastest for speech. "Premium" gives sub-cent accuracy for musical performance but adds ~46ms latency.</div>
+
+<!-- ═══ STEP 7 ═══ -->
+<h2><span class="step-num">7</span> ADD THE MIRROR</h2>
+<p>Drop MIRROR into your rack alongside NERVE. It receives face data on port 9002 automatically. Now you can see your phosphor-green wireframe face while you perform. It's part visual feedback, part aesthetic statement.</p>
+
+<!-- ═══ TROUBLESHOOTING ═══ -->
+<h2 style="color: var(--red);"><span class="step-num" style="border-color: var(--red);">?</span> TROUBLESHOOTING</h2>
+
+<div class="note"><strong>Modules don't appear in browser</strong><br>
+Check that the plugin folder name is exactly "WeirdSynths" (case-sensitive). Check <code>~/.Rack2/log.txt</code> for ABI version errors. Ensure you fully quit Rack (Cmd+Q) before relaunching.</div>
+
+<div class="note"><strong>Bridge runs but no data in NERVE</strong><br>
+Check that bridge says "Sending to ports: [9000, 9001, 9002]". Make sure no firewall is blocking localhost UDP. Try stopping and restarting the bridge after Rack is loaded.</div>
+
+<div class="note"><strong>Face tracking is jittery</strong><br>
+Increase SMOOTH on NERVE to 40-60%. Ensure good lighting on your face — side-lighting and backlighting make tracking less accurate. Move closer to camera if you're far away.</div>
+
+<div class="note"><strong>VOICE not detecting pitch</strong><br>
+Increase SENS knob. Check that audio is actually reaching the module (patch THRU to an output and listen). Try "Light" quality mode for faster detection. Ensure you're making a voiced sound (not whispering).</div>
+
+<div class="note"><strong>High CPU usage</strong><br>
+The Python bridge is doing the heavy lifting. If CPU is high, try reducing camera resolution: <code>--width 640 --height 480</code>. In VOICE, try "Light" quality mode.</div>
+
+</div>
+
+<footer>
+  <div>WeirdSynths &copy; 2025-2026 Millicent &middot; GPL-3.0</div>
+</footer>
+
+</body>
+</html>

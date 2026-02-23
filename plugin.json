@@ -5,39 +5,42 @@
   "license": "GPL-3.0-or-later",
   "brand": "WeirdSynths",
   "author": "Millicent",
-  "authorEmail": "",
-  "authorUrl": "https://facefront.netlify.app",
-  "pluginUrl": "https://facefront.netlify.app",
-  "manualUrl": "",
-  "sourceUrl": "",
+  "authorEmail": "millieboebilliefeefifofillie@gmail.com",
+  "authorUrl": "https://dungbeetlesisyphus.github.io/WeirdSynths/",
+  "pluginUrl": "https://dungbeetlesisyphus.github.io/WeirdSynths/",
+  "manualUrl": "https://dungbeetlesisyphus.github.io/WeirdSynths/modules.html",
+  "sourceUrl": "https://github.com/dungbeetlesisyphus/WeirdSynths",
   "donateUrl": "",
-  "changelogUrl": "",
+  "changelogUrl": "https://github.com/dungbeetlesisyphus/WeirdSynths/releases",
+  "bugReportUrl": "https://github.com/dungbeetlesisyphus/WeirdSynths/issues",
+  "description": "Face tracking and vocal analysis modules — your face and voice become modular controllers via webcam and microphone",
   "modules": [
     {
       "slug": "Nerve",
       "name": "NERVE",
-      "description": "Face landmark tracking to CV — your face is a modular controller",
+      "description": "Face landmark tracking to CV — 468 landmarks from your webcam become control voltages for any parameter",
       "tags": [
         "Controller",
-        "External",
         "Polyphonic",
+        "External",
         "Utility"
       ]
     },
     {
       "slug": "Skull",
       "name": "SKULL",
-      "description": "Face-controlled drum machine — blink kicks, jaw snares, brow hats",
+      "description": "Face-controlled drum machine — blink for kicks, jaw for snares, brows for hi-hats with built-in synthesis",
       "tags": [
         "Drum",
         "Controller",
-        "External"
+        "External",
+        "Physical modeling"
       ]
     },
     {
       "slug": "Mirror",
       "name": "MIRROR",
-      "description": "Dot matrix CRT face display — see your face rendered in green phosphor",
+      "description": "Dot matrix CRT face display — see your face rendered in green phosphor wireframe from tracking data",
       "tags": [
         "Visual",
         "External",
@@ -47,7 +50,7 @@
     {
       "slug": "Voice",
       "name": "VOICE",
-      "description": "Vocal pitch tracker — V/Oct, gate, envelope, onset, brightness, harmonics from audio",
+      "description": "Vocal pitch tracker — YIN algorithm extracts V/Oct, gate, envelope, onset, brightness, and harmonics from audio",
       "tags": [
         "Controller",
         "Utility",

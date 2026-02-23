@@ -1,69 +1,85 @@
-# NERVE — Face Tracking to CV for VCV Rack
+# WeirdSynths — Your Face Is a Modular Controller
 
-**Your face is a modular controller.**
+**Face tracking, vocal analysis, and body-as-instrument modules for VCV Rack 2.**
 
-NERVE receives real-time face landmark data over UDP and converts it into control voltage outputs in VCV Rack. Move your head, raise your eyebrows, open your mouth, blink — each gesture becomes a CV signal you can patch into anything.
+WeirdSynths turns your webcam and microphone into performance controllers. Raise an eyebrow to sweep a filter. Blink to trigger a kick drum. Sing to control an oscillator. See your face rendered in green phosphor.
 
-Part of the [WeirdSynths](https://facefront.netlify.app) plugin collection.
+## Modules
 
-## Outputs
+### NERVE — Face Tracking to CV (20 HP)
 
-NERVE provides 16 CV outputs from facial landmarks:
+Receives 468 MediaPipe face landmarks via UDP and converts facial gestures into calibrated CV signals. Each facial region outputs independent voltages: eyes, brows, jaw, mouth, head rotation, tongue, and gaze.
 
-| Output | Signal | Range |
-|--------|--------|-------|
-| Head X | Yaw (left/right) | ±5V |
-| Head Y | Pitch (up/down) | ±5V |
-| Head Z | Roll (tilt) | ±5V |
-| Distance | Face proximity | 0–10V |
-| Left Eye | Left eye openness | 0–10V |
-| Right Eye | Right eye openness | 0–10V |
-| Gaze X | Horizontal gaze | ±5V |
-| Gaze Y | Vertical gaze | ±5V |
-| Mouth W | Mouth width | 0–10V |
-| Mouth H | Mouth height | 0–10V |
-| Jaw | Jaw openness | 0–10V |
-| Lips | Lip distance | 0–10V |
-| Brow L | Left eyebrow raise | 0–10V |
-| Brow R | Right eyebrow raise | 0–10V |
-| Blink | Blink trigger | 10V gate |
-| Expression | Composite expression | 0–10V |
+**Outputs:** L Eye, R Eye, L Brow, R Brow, Jaw, Mouth W, Mouth H, Head X/Y/Z, Tongue, Gaze X/Y, Blink, Expression, Polyphonic bundle
 
-Additional derived outputs (Asymmetry, Intensity, Head Shake, Nod, Tension, Micro-expressions, Emotion) and gesture loop outputs are stubbed for future development.
+**Controls:** Smooth (0–500ms), Scale (0–200%), Offset (±5V)
 
-## Controls
+### SKULL — Face-Controlled Drums (12 HP)
 
-- **Smooth** — Slew limiter for CV outputs (0–500ms). Tames jitter from camera noise.
-- **Scale** — Global output amplitude (0–100%).
-- **Loop Len** — Gesture loop length (0.5–8s). *Future feature.*
-- **Cam** — Enable/disable the UDP listener.
-- **Rec** — Record gesture. *Future feature.*
-- **Faces** — Single/multi-face mode toggle. *Future feature.*
+Your face is a drum machine. Blinks trigger kicks, jaw movements fire snares, eyebrow raises hit hi-hats. Built-in analog-modeled percussion synthesis — no external sound sources needed.
 
-## How It Works
+**Outputs:** Kick (audio + trigger), Snare (audio + trigger), Hat (audio + trigger), Mix
 
-NERVE listens for UDP packets on localhost port 9000 (configurable via right-click menu). A companion bridge application captures your webcam, runs face landmark detection, and sends the data to NERVE using a compact binary protocol.
+**Controls:** Kick Tune/Decay, Snare Tone/Decay, Hat Tone/Decay, Sensitivity
 
-### Architecture
+### MIRROR — CRT Face Display (14 HP)
 
-```
-Camera → Face Tracking → UDP (84 bytes) → NERVE → CV Outputs → Your Patch
-```
+Dot-matrix display renders your face as a green phosphor wireframe in real-time. Visual feedback for face tracking performance, and an aesthetic statement in your rack.
 
-### Bridge Options
+**Controls:** Brightness, Persistence
 
-**Python bridge (included):**
+### VOICE — Vocal Pitch Tracker (8 HP)
+
+Real-time audio analysis using the YIN pitch detection algorithm. Extracts pitch (V/Oct), gate, amplitude envelope, onset transients, spectral brightness, and harmonic series from any monophonic audio input. No bridge required — works with any VCV audio source.
+
+**Inputs:** Audio In
+
+**Outputs:** Audio Thru, V/Oct, Gate, Envelope (0–10V), Onset (trigger), Brightness (0–10V), Harmonics (polyphonic V/Oct)
+
+**Controls:** Sensitivity, Smoothing, Tone
+
+**Quality modes** (right-click): Light (512 samples, ~11ms), Balanced (1024, ~23ms), Premium (2048, ~46ms)
+
+## Quick Start
+
+### Prerequisites
+
+- [VCV Rack 2](https://vcvrack.com) (Free or Pro)
+- Python 3.9+ (for face tracking bridge)
+- Webcam (any USB or built-in)
+
+### Install the Plugin
+
+Download the latest release from [GitHub Releases](https://github.com/dungbeetlesisyphus/WeirdSynths/releases) and copy it to your VCV Rack plugins folder:
 
 ```bash
-pip install mediapipe opencv-python
-python bridge/nerve_bridge.py --show
+# macOS (Apple Silicon)
+cp -r WeirdSynths ~/Library/Application\ Support/Rack2/plugins-mac-arm64/
+
+# macOS (Intel)
+cp -r WeirdSynths ~/Library/Application\ Support/Rack2/plugins-mac-x64/
+
+# Linux
+cp -r WeirdSynths ~/.Rack2/plugins/
+
+# Windows
+copy WeirdSynths %LOCALAPPDATA%\Rack2\plugins\
 ```
 
-This runs MediaPipe Face Mesh on your webcam and sends face data to NERVE at 30fps. Use `--show` to see a preview window. Use `--port` to change the UDP port.
+Restart VCV Rack completely (Cmd+Q / Alt+F4, then relaunch).
 
-**Raspberry Pi appliance (future):**
+### Start the Face Tracking Bridge
 
-A dedicated Pi 5 + AI HAT+ running hardware-accelerated face tracking, sending data over your local network. Lower latency, no CPU impact on your music machine.
+```bash
+pip3 install mediapipe opencv-python numpy
+python3 bridge/nerve_bridge.py
+```
+
+The bridge sends face data to NERVE (port 9000), SKULL (port 9001), and MIRROR (port 9002) simultaneously.
+
+### VOICE — No Bridge Needed
+
+VOICE analyzes audio directly through VCV's audio input. Patch any audio source into VOICE's IN jack and connect V/OCT to an oscillator to start singing notes into your synth.
 
 ## Building from Source
 
@@ -73,49 +89,35 @@ Requires the [VCV Rack SDK](https://vcvrack.com/downloads).
 git clone https://github.com/dungbeetlesisyphus/WeirdSynths.git
 cd WeirdSynths
 make RACK_DIR=/path/to/Rack-SDK
+make install
 ```
 
-### Install
+## Bridge Protocol
 
-Copy the built plugin to your VCV Rack plugins directory:
-
-```bash
-# macOS (Apple Silicon)
-mkdir -p ~/Library/Application\ Support/Rack2/plugins-mac-arm64/WeirdSynths/res
-cp plugin.dylib ~/Library/Application\ Support/Rack2/plugins-mac-arm64/WeirdSynths/
-cp plugin.json ~/Library/Application\ Support/Rack2/plugins-mac-arm64/WeirdSynths/
-cp res/Nerve.svg ~/Library/Application\ Support/Rack2/plugins-mac-arm64/WeirdSynths/res/
-
-# macOS (Intel)
-# Use plugins-mac-x64 instead of plugins-mac-arm64
-
-# Linux
-# Use ~/.local/share/Rack2/plugins-lin-x64/
-
-# Windows
-# Use %LOCALAPPDATA%/Rack2/plugins-win-x64/
-```
-
-Restart VCV Rack (Cmd+Q / Alt+F4, then relaunch).
-
-## UDP Protocol
-
-NERVE uses a compact 84-byte binary protocol:
+The Python bridge uses UDP with a compact binary protocol:
 
 | Offset | Size | Type | Field |
 |--------|------|------|-------|
 | 0 | 4 | char[4] | Magic: `NERV` |
-| 4 | 2 | uint16 LE | Protocol version: `1` |
+| 4 | 2 | uint16 LE | Protocol version: `2` |
 | 6 | 2 | uint16 LE | Face count (1–4) |
-| 8 | 68 | float32[17] LE | Face data (see output table) |
-| 76 | 8 | uint64 LE | Timestamp (microseconds) |
+| 8–88 | 84 | float32[21] LE | 21 face parameters |
+| 88 | 8 | uint64 LE | Timestamp (microseconds) |
 
-All values are little-endian. Floats are normalized to -1..1 or 0..1 ranges. The module clamps all incoming values.
+Bridge broadcasts to ports 9000, 9001, 9002 by default. Configurable with `--port`.
+
+## Documentation
+
+- [Module Reference](https://dungbeetlesisyphus.github.io/WeirdSynths/modules.html) — Full I/O tables, parameters, and patch tips
+- [Getting Started Guide](https://dungbeetlesisyphus.github.io/WeirdSynths/guide.html) — Step-by-step setup and first patches
+- [Dev Board](https://dungbeetlesisyphus.github.io/WeirdSynths/board.html) — Public roadmap and task tracker
 
 ## License
 
 GPL-3.0-or-later. See [LICENSE](LICENSE).
 
+The Python bridge (`bridge/nerve_bridge.py`) uses MediaPipe (Apache 2.0) and OpenCV (Apache 2.0).
+
 ## Author
 
-**Millicent** — [WeirdSynths](https://facefront.netlify.app)
+**Millicent** — [WeirdSynths](https://dungbeetlesisyphus.github.io/WeirdSynths/)

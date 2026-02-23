@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WeirdOS — Dev Board</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  .site-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    border-bottom: 1px solid #1a1a2a;
+    background: #08080e;
+    font-family: 'Share Tech Mono', 'Courier New', monospace;
+  }
+  .site-nav-brand { font-size: 14px; color: #7c5cff; font-weight: bold; letter-spacing: 3px; text-decoration: none; }
+  .site-nav-links { display: flex; gap: 20px; }
+  .site-nav-links a { color: #555570; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; text-decoration: none; transition: color 0.2s; }
+  .site-nav-links a:hover { color: #5cffb0; }
+  .site-nav-links a.active { color: #5cffb0; }
+
+  :root {
+    --bg: #06060a;
+    --panel: #0a0a12;
+    --border: #1a1a2a;
+    --phosphor: #5cffb0;
+    --phosphor-dim: #2a7a50;
+    --phosphor-glow: rgba(92, 255, 176, 0.08);
+    --text: #8888aa;
+    --text-dim: #555570;
+    --accent-red: #ff5c5c;
+    --accent-yellow: #ffcc5c;
+    --accent-blue: #5cacff;
+    --accent-purple: #b05cff;
+    --card-bg: #0d0d18;
+    --card-hover: #12121f;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Share Tech Mono', 'Courier New', monospace;
+    min-height: 100vh;
+    overflow-x: auto;
+  }
+
+  /* ── Header ── */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, var(--phosphor-dim), var(--phosphor));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: var(--bg);
+    font-weight: bold;
+    box-shadow: 0 0 20px var(--phosphor-glow);
+  }
+
+  .logo-text {
+    font-size: 18px;
+    color: var(--phosphor);
+    letter-spacing: 3px;
+    text-shadow: 0 0 10px var(--phosphor-glow);
+  }
+
+  .logo-sub {
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 10px;
+  }
+
+  .btn {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 12px;
+    padding: 6px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn:hover {
+    border-color: var(--phosphor-dim);
+    color: var(--phosphor);
+    box-shadow: 0 0 8px var(--phosphor-glow);
+  }
+
+  .btn-primary {
+    background: var(--phosphor-dim);
+    border-color: var(--phosphor);
+    color: var(--bg);
+  }
+
+  .btn-primary:hover {
+    background: var(--phosphor);
+    box-shadow: 0 0 15px var(--phosphor-glow);
+  }
+
+  /* ── Stats Bar ── */
+  .stats-bar {
+    display: flex;
+    gap: 24px;
+    padding: 10px 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel);
+    font-size: 11px;
+  }
+
+  .stat {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .stat-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  .stat-dot.active { background: var(--phosphor); box-shadow: 0 0 6px var(--phosphor); }
+  .stat-dot.progress { background: var(--accent-yellow); box-shadow: 0 0 6px var(--accent-yellow); }
+  .stat-dot.todo { background: var(--accent-blue); box-shadow: 0 0 6px var(--accent-blue); }
+  .stat-dot.parked { background: var(--text-dim); }
+
+  /* ── Board ── */
+  .board {
+    display: flex;
+    gap: 16px;
+    padding: 20px 24px;
+    min-height: calc(100vh - 100px);
+    overflow-x: auto;
+  }
+
+  .column {
+    min-width: 280px;
+    max-width: 320px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .column-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px 6px 0 0;
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+
+  .column-header .count {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1px 8px;
+    font-size: 10px;
+    color: var(--text-dim);
+  }
+
+  .column-body {
+    flex: 1;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-top: none;
+    border-radius: 0 0 6px 6px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 200px;
+  }
+
+  .column-body.drag-over {
+    background: rgba(92, 255, 176, 0.03);
+    border-color: var(--phosphor-dim);
+  }
+
+  /* Column colors */
+  .col-backlog .column-header { border-left: 3px solid var(--text-dim); }
+  .col-todo .column-header { border-left: 3px solid var(--accent-blue); }
+  .col-progress .column-header { border-left: 3px solid var(--accent-yellow); }
+  .col-review .column-header { border-left: 3px solid var(--accent-purple); }
+  .col-done .column-header { border-left: 3px solid var(--phosphor); }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 12px;
+    cursor: grab;
+    transition: all 0.15s;
+    position: relative;
+  }
+
+  .card:hover {
+    border-color: var(--phosphor-dim);
+    background: var(--card-hover);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+  }
+
+  .card.dragging {
+    opacity: 0.4;
+    transform: rotate(2deg);
+  }
+
+  .card-id {
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+  }
+
+  .card-title {
+    font-size: 13px;
+    color: #cccce0;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+
+  .card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 8px;
+  }
+
+  .tag {
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .tag-module { background: rgba(92, 255, 176, 0.12); color: var(--phosphor); }
+  .tag-dsp { background: rgba(255, 204, 92, 0.12); color: var(--accent-yellow); }
+  .tag-ui { background: rgba(176, 92, 255, 0.12); color: var(--accent-purple); }
+  .tag-bridge { background: rgba(92, 172, 255, 0.12); color: var(--accent-blue); }
+  .tag-infra { background: rgba(255, 92, 92, 0.12); color: var(--accent-red); }
+  .tag-biz { background: rgba(255, 150, 92, 0.12); color: #ff965c; }
+  .tag-hw { background: rgba(200, 200, 200, 0.12); color: #aaa; }
+
+  .card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 10px;
+    color: var(--text-dim);
+  }
+
+  .priority {
+    display: flex;
+    gap: 2px;
+  }
+
+  .priority-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--border);
+  }
+
+  .priority-dot.active { background: var(--accent-yellow); }
+  .priority-dot.high { background: var(--accent-red); }
+
+  .card-delete {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    font-size: 12px;
+    color: var(--text-dim);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  .card:hover .card-delete { opacity: 0.5; }
+  .card-delete:hover { opacity: 1 !important; color: var(--accent-red); }
+
+  /* ── Add Card ── */
+  .add-card-btn {
+    background: none;
+    border: 1px dashed var(--border);
+    border-radius: 5px;
+    padding: 10px;
+    color: var(--text-dim);
+    font-family: inherit;
+    font-size: 11px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+  }
+
+  .add-card-btn:hover {
+    border-color: var(--phosphor-dim);
+    color: var(--phosphor);
+    background: var(--phosphor-glow);
+  }
+
+  /* ── Modal ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal-overlay.active { display: flex; }
+
+  .modal {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 24px;
+    width: 420px;
+    max-width: 90vw;
+    box-shadow: 0 0 40px rgba(0,0,0,0.5), 0 0 20px var(--phosphor-glow);
+  }
+
+  .modal h3 {
+    color: var(--phosphor);
+    font-size: 14px;
+    letter-spacing: 2px;
+    margin-bottom: 16px;
+  }
+
+  .modal label {
+    display: block;
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    margin-top: 12px;
+  }
+
+  .modal input, .modal select, .modal textarea {
+    width: 100%;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 13px;
+    padding: 8px 10px;
+    outline: none;
+  }
+
+  .modal input:focus, .modal select:focus, .modal textarea:focus {
+    border-color: var(--phosphor-dim);
+    box-shadow: 0 0 6px var(--phosphor-glow);
+  }
+
+  .modal textarea { resize: vertical; min-height: 60px; }
+
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 20px;
+  }
+
+  /* ── File indicator ── */
+  .file-indicator {
+    font-size: 10px;
+    color: var(--text-dim);
+    padding: 4px 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .file-indicator .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--phosphor-dim);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 1; }
+  }
+
+  /* ── Scanline overlay ── */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      transparent 0px,
+      transparent 2px,
+      rgba(0,0,0,0.03) 2px,
+      rgba(0,0,0,0.03) 4px
+    );
+    z-index: 1000;
+  }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--phosphor-dim); }
+</style>
+</head>
+<body>
+
+<div class="site-nav">
+  <a href="index.html" class="site-nav-brand">WEIRDSYNTHS</a>
+  <div class="site-nav-links">
+    <a href="index.html">Home</a>
+    <a href="modules.html">Modules</a>
+    <a href="guide.html">Get Started</a>
+    <a href="board.html" class="active">Dev Board</a>
+  </div>
+</div>
+
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">W</div>
+    <div>
+      <div class="logo-text">WEIRD OS</div>
+      <div class="logo-sub">DEV BOARD v2.0</div>
+    </div>
+  </div>
+  <div class="header-actions">
+    <button class="btn" onclick="exportBoard()">SAVE .weird</button>
+    <button class="btn" onclick="importBoard()">LOAD .weird</button>
+    <button class="btn-primary btn" onclick="openNewCard()">+ NEW TICKET</button>
+  </div>
+</div>
+
+<div class="stats-bar">
+  <div class="stat"><div class="stat-dot active"></div><span id="stat-done">0</span> DONE</div>
+  <div class="stat"><div class="stat-dot progress"></div><span id="stat-progress">0</span> IN PROGRESS</div>
+  <div class="stat"><div class="stat-dot todo"></div><span id="stat-todo">0</span> TODO</div>
+  <div class="stat"><div class="stat-dot parked"></div><span id="stat-backlog">0</span> BACKLOG</div>
+  <div class="file-indicator"><div class="dot"></div><span id="file-name">unsaved</span></div>
+</div>
+
+<div class="board" id="board">
+  <div class="column col-backlog" data-col="backlog">
+    <div class="column-header">BACKLOG <span class="count" id="count-backlog">0</span></div>
+    <div class="column-body" id="col-backlog"></div>
+  </div>
+  <div class="column col-todo" data-col="todo">
+    <div class="column-header">TODO <span class="count" id="count-todo">0</span></div>
+    <div class="column-body" id="col-todo"></div>
+  </div>
+  <div class="column col-progress" data-col="progress">
+    <div class="column-header">IN PROGRESS <span class="count" id="count-progress">0</span></div>
+    <div class="column-body" id="col-progress"></div>
+  </div>
+  <div class="column col-review" data-col="review">
+    <div class="column-header">REVIEW <span class="count" id="count-review">0</span></div>
+    <div class="column-body" id="col-review"></div>
+  </div>
+  <div class="column col-done" data-col="done">
+    <div class="column-header">DONE <span class="count" id="count-done">0</span></div>
+    <div class="column-body" id="col-done"></div>
+  </div>
+</div>
+
+<!-- New Card Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h3>NEW TICKET</h3>
+    <label>TITLE</label>
+    <input type="text" id="card-title" placeholder="What needs to be done?" autofocus>
+    <label>DESCRIPTION</label>
+    <textarea id="card-desc" placeholder="Details..."></textarea>
+    <label>TAG</label>
+    <select id="card-tag">
+      <option value="module">MODULE</option>
+      <option value="dsp">DSP</option>
+      <option value="ui">UI</option>
+      <option value="bridge">BRIDGE</option>
+      <option value="infra">INFRA</option>
+      <option value="biz">BUSINESS</option>
+      <option value="hw">HARDWARE</option>
+    </select>
+    <label>PRIORITY</label>
+    <select id="card-priority">
+      <option value="1">LOW</option>
+      <option value="2" selected>MEDIUM</option>
+      <option value="3">HIGH</option>
+    </select>
+    <label>COLUMN</label>
+    <select id="card-column">
+      <option value="backlog">BACKLOG</option>
+      <option value="todo" selected>TODO</option>
+      <option value="progress">IN PROGRESS</option>
+      <option value="review">REVIEW</option>
+      <option value="done">DONE</option>
+    </select>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">CANCEL</button>
+      <button class="btn-primary btn" onclick="addCard()">CREATE</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="file-input" accept=".weird" style="display:none">
+
+<script>
+let tickets = [];
+let ticketCounter = 0;
+let draggedCard = null;
+let currentFile = 'unsaved';
+
+// ── Default tickets for WeirdSynths ──
+const defaultTickets = [
+  { id: 'WS-001', title: 'NERVE module — face tracking to CV', desc: 'Face landmark tracking via UDP, 20 CV outputs', tag: 'module', priority: 3, col: 'done' },
+  { id: 'WS-002', title: 'SKULL module — face-controlled drums', desc: 'Blink kicks, jaw snares, brow hats, tongue crash', tag: 'module', priority: 3, col: 'done' },
+  { id: 'WS-003', title: 'MIRROR module — CRT face display', desc: 'Dot matrix green phosphor face render, 32x40 grid', tag: 'module', priority: 3, col: 'done' },
+  { id: 'WS-004', title: 'VOICE module — vocal pitch tracker', desc: 'YIN pitch detect, V/Oct, gate, env, onset, brightness, harmonics poly out', tag: 'module', priority: 3, col: 'progress' },
+  { id: 'WS-005', title: 'Bridge v2 protocol', desc: '21 floats, tongue + brow data, multi-port broadcast', tag: 'bridge', priority: 2, col: 'done' },
+  { id: 'WS-006', title: 'Bridge sends to 3 ports (9000-9002)', desc: 'NERVE, SKULL, MIRROR each get their own UDP port', tag: 'bridge', priority: 2, col: 'done' },
+  { id: 'WS-007', title: 'Pi 5 + AI HAT+ hardware console', desc: 'Dedicated face-tracking synth appliance with WeirdOS', tag: 'hw', priority: 2, col: 'backlog' },
+  { id: 'WS-008', title: 'WeirdOS — locked boot image', desc: 'Encrypted filesystem, secure boot, read-only root', tag: 'infra', priority: 1, col: 'backlog' },
+  { id: 'WS-009', title: 'BODY module — full body pose tracking', desc: 'MediaPipe Pose, hands/arms/shoulders as CV. Premium tier.', tag: 'module', priority: 1, col: 'backlog' },
+  { id: 'WS-010', title: 'GHOST module — face data looper', desc: 'Record expressions, play back, layer, quantize to clock', tag: 'module', priority: 1, col: 'backlog' },
+  { id: 'WS-011', title: 'MIRROR CV inputs — display modulation', desc: 'Zoom, tilt, color shift, glitch via CV from other modules', tag: 'module', priority: 1, col: 'backlog' },
+  { id: 'WS-012', title: 'WeirdSynths Stripe storefront', desc: 'Sell premium modules, bundles, hardware', tag: 'biz', priority: 1, col: 'backlog' },
+  { id: 'WS-013', title: 'VCV Library submission', desc: 'Get WeirdSynths approved in official VCV Library', tag: 'infra', priority: 2, col: 'todo' },
+  { id: 'WS-014', title: 'GitHub repo — README + screenshots', desc: 'Professional README with module screenshots and install guide', tag: 'infra', priority: 2, col: 'todo' },
+  { id: 'WS-015', title: 'Demo video — full suite showcase', desc: '3-5 min YouTube video showing NERVE+SKULL+MIRROR+VOICE live', tag: 'biz', priority: 2, col: 'todo' },
+  { id: 'WS-016', title: 'Tongue tracking improvement', desc: 'tongueOut blendshape too weak even with 3x boost', tag: 'dsp', priority: 1, col: 'backlog' },
+];
+
+function init() {
+  tickets = defaultTickets.map((t, i) => ({ ...t, order: i }));
+  ticketCounter = tickets.length;
+  render();
+}
+
+function render() {
+  ['backlog', 'todo', 'progress', 'review', 'done'].forEach(col => {
+    const body = document.getElementById('col-' + col);
+    const colTickets = tickets.filter(t => t.col === col).sort((a, b) => a.order - b.order);
+    body.innerHTML = '';
+
+    colTickets.forEach(t => {
+      body.appendChild(createCardEl(t));
+    });
+
+    // Add button
+    const addBtn = document.createElement('button');
+    addBtn.className = 'add-card-btn';
+    addBtn.textContent = '+ Add ticket';
+    addBtn.onclick = () => openNewCard(col);
+    body.appendChild(addBtn);
+
+    document.getElementById('count-' + col).textContent = colTickets.length;
+  });
+
+  // Stats
+  document.getElementById('stat-done').textContent = tickets.filter(t => t.col === 'done').length;
+  document.getElementById('stat-progress').textContent = tickets.filter(t => t.col === 'progress').length;
+  document.getElementById('stat-todo').textContent = tickets.filter(t => t.col === 'todo').length;
+  document.getElementById('stat-backlog').textContent = tickets.filter(t => t.col === 'backlog').length;
+  document.getElementById('file-name').textContent = currentFile;
+}
+
+function createCardEl(ticket) {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.draggable = true;
+  card.dataset.id = ticket.id;
+
+  const priorityDots = Array.from({ length: 3 }, (_, i) => {
+    const cls = i < ticket.priority ? (ticket.priority >= 3 ? 'active high' : 'active') : '';
+    return `<div class="priority-dot ${cls}"></div>`;
+  }).join('');
+
+  card.innerHTML = `
+    <span class="card-delete" onclick="deleteCard('${ticket.id}')">&times;</span>
+    <div class="card-id">${ticket.id}</div>
+    <div class="card-title">${ticket.title}</div>
+    <div class="card-tags"><span class="tag tag-${ticket.tag}">${ticket.tag}</span></div>
+    <div class="card-footer">
+      <div class="priority">${priorityDots}</div>
+      <span>${ticket.desc ? '...' : ''}</span>
+    </div>
+  `;
+
+  // Drag events
+  card.addEventListener('dragstart', (e) => {
+    draggedCard = ticket.id;
+    card.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+  });
+
+  card.addEventListener('dragend', () => {
+    card.classList.remove('dragging');
+    draggedCard = null;
+    document.querySelectorAll('.column-body').forEach(el => el.classList.remove('drag-over'));
+  });
+
+  return card;
+}
+
+// ── Drag & Drop ──
+document.querySelectorAll('.column-body').forEach(colBody => {
+  colBody.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    colBody.classList.add('drag-over');
+  });
+
+  colBody.addEventListener('dragleave', () => {
+    colBody.classList.remove('drag-over');
+  });
+
+  colBody.addEventListener('drop', (e) => {
+    e.preventDefault();
+    colBody.classList.remove('drag-over');
+
+    if (!draggedCard) return;
+
+    const targetCol = colBody.id.replace('col-', '');
+    const ticket = tickets.find(t => t.id === draggedCard);
+    if (ticket) {
+      ticket.col = targetCol;
+      render();
+    }
+  });
+});
+
+// ── Modal ──
+function openNewCard(defaultCol) {
+  document.getElementById('modal').classList.add('active');
+  document.getElementById('card-title').value = '';
+  document.getElementById('card-desc').value = '';
+  if (defaultCol) document.getElementById('card-column').value = defaultCol;
+  setTimeout(() => document.getElementById('card-title').focus(), 100);
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('active');
+}
+
+function addCard() {
+  const title = document.getElementById('card-title').value.trim();
+  if (!title) return;
+
+  ticketCounter++;
+  const id = 'WS-' + String(ticketCounter).padStart(3, '0');
+
+  tickets.push({
+    id,
+    title,
+    desc: document.getElementById('card-desc').value.trim(),
+    tag: document.getElementById('card-tag').value,
+    priority: parseInt(document.getElementById('card-priority').value),
+    col: document.getElementById('card-column').value,
+    order: tickets.length
+  });
+
+  closeModal();
+  render();
+}
+
+function deleteCard(id) {
+  if (!confirm('Delete this ticket?')) return;
+  tickets = tickets.filter(t => t.id !== id);
+  render();
+}
+
+// ── .weird File I/O ──
+function exportBoard() {
+  const data = {
+    version: '2.0',
+    app: 'WeirdOS',
+    exported: new Date().toISOString(),
+    counter: ticketCounter,
+    tickets
+  };
+
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'weirdsynths-board.weird';
+  a.click();
+  URL.revokeObjectURL(url);
+  currentFile = 'weirdsynths-board.weird';
+  render();
+}
+
+function importBoard() {
+  document.getElementById('file-input').click();
+}
+
+document.getElementById('file-input').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (data.app !== 'WeirdOS') {
+        alert('Not a WeirdOS board file');
+        return;
+      }
+      tickets = data.tickets || [];
+      ticketCounter = data.counter || tickets.length;
+      currentFile = file.name;
+      render();
+    } catch (err) {
+      alert('Failed to parse .weird file');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
+// ── Keyboard shortcuts ──
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeModal();
+  if (e.key === 'n' && !e.target.closest('input, textarea, select')) {
+    e.preventDefault();
+    openNewCard();
+  }
+  if (e.key === 'Enter' && document.getElementById('modal').classList.contains('active')) {
+    addCard();
+  }
+});
+
+// ── Init ──
+init();
+</script>
+</body>
+</html>
