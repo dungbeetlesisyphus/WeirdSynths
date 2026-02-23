@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 """
 NERVE Bridge — Face Tracking to VCV Rack UDP
-Captures webcam via MediaPipe Face Mesh, extracts 17 facial features,
-sends binary UDP packets to NERVE module on localhost:9000.
+Captures webcam via MediaPipe FaceLandmarker (Tasks API), extracts 17
+facial features from blendshapes + landmarks, sends binary UDP packets
+to NERVE module on localhost:9000.
 
 Usage:
     pip install mediapipe opencv-python
     python nerve_bridge.py [--port 9000] [--camera 0] [--show]
+
+First run downloads the face_landmarker model (~4MB) automatically.
 
 Protocol: 84-byte packets
     Bytes 0-3:   Magic "NERV"
@@ -17,223 +20,204 @@ Protocol: 84-byte packets
 """
 
 import argparse
+import os
 import socket
 import struct
 import sys
 import time
+import urllib.request
 
 import cv2
 import mediapipe as mp
 import numpy as np
 
-
-# ── MediaPipe Face Mesh landmark indices ──────────────────────
-
-# Key landmarks for feature extraction
-# See: https://github.com/google/mediapipe/blob/master/mediapipe/modules/face_geometry/data/canonical_face_model_uv_visualization.png
-
-# Eyes
-LEFT_EYE_TOP = 159
-LEFT_EYE_BOTTOM = 145
-LEFT_EYE_INNER = 133
-LEFT_EYE_OUTER = 33
-
-RIGHT_EYE_TOP = 386
-RIGHT_EYE_BOTTOM = 374
-RIGHT_EYE_INNER = 362
-RIGHT_EYE_OUTER = 263
-
-# Iris (from refined landmarks)
-LEFT_IRIS_CENTER = 468
-RIGHT_IRIS_CENTER = 473
-
-# Eyebrows
-LEFT_BROW_INNER = 107
-LEFT_BROW_MID = 105
-LEFT_BROW_OUTER = 70
-RIGHT_BROW_INNER = 336
-RIGHT_BROW_MID = 334
-RIGHT_BROW_OUTER = 300
-
-# Mouth
-MOUTH_LEFT = 61
-MOUTH_RIGHT = 291
-MOUTH_TOP = 13
-MOUTH_BOTTOM = 14
-UPPER_LIP_TOP = 0
-LOWER_LIP_BOTTOM = 17
-
-# Jaw / chin
-JAW_TIP = 152
-
-# Nose (reference points)
-NOSE_TIP = 1
-NOSE_BRIDGE = 6
-
-# Forehead reference
-FOREHEAD_CENTER = 10
+# ── Model download URL ──
+MODEL_URL = "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task"
+MODEL_FILENAME = "face_landmarker.task"
 
 
-def distance(a, b):
-    """Euclidean distance between two landmark points."""
-    return np.sqrt((a.x - b.x)**2 + (a.y - b.y)**2 + (a.z - b.z)**2)
+def ensure_model(script_dir: str) -> str:
+    """Download the FaceLandmarker model if not present."""
+    model_path = os.path.join(script_dir, MODEL_FILENAME)
+    if not os.path.exists(model_path):
+        print(f"Downloading face landmarker model...")
+        urllib.request.urlretrieve(MODEL_URL, model_path)
+        print(f"Model saved to {model_path}")
+    return model_path
 
 
-def distance_2d(a, b):
-    """2D distance (x, y only)."""
-    return np.sqrt((a.x - b.x)**2 + (a.y - b.y)**2)
+# ── Blendshape name → index mapping ──
+# MediaPipe FaceLandmarker outputs 52 blendshapes.
+# We map the ones we need to NERVE's 17 features.
+# Full list: https://ai.google.dev/edge/mediapipe/solutions/vision/face_landmarker#models
+
+BLENDSHAPE_NAMES = {
+    'eyeBlinkLeft': None,
+    'eyeBlinkRight': None,
+    'eyeWideLeft': None,
+    'eyeWideRight': None,
+    'eyeLookUpLeft': None,
+    'eyeLookUpRight': None,
+    'eyeLookDownLeft': None,
+    'eyeLookDownRight': None,
+    'eyeLookInLeft': None,
+    'eyeLookInRight': None,
+    'eyeLookOutLeft': None,
+    'eyeLookOutRight': None,
+    'browDownLeft': None,
+    'browDownRight': None,
+    'browInnerUp': None,
+    'browOuterUpLeft': None,
+    'browOuterUpRight': None,
+    'jawOpen': None,
+    'mouthClose': None,
+    'mouthSmileLeft': None,
+    'mouthSmileRight': None,
+    'mouthFrownLeft': None,
+    'mouthFrownRight': None,
+    'mouthPucker': None,
+    'mouthLeft': None,
+    'mouthRight': None,
+    'mouthStretchLeft': None,
+    'mouthStretchRight': None,
+}
 
 
-class FaceFeatureExtractor:
-    """Extracts 17 normalized features from MediaPipe Face Mesh landmarks."""
+def get_blendshape_dict(blendshapes) -> dict:
+    """Convert MediaPipe blendshape list to name→score dict."""
+    return {bs.category_name: bs.score for bs in blendshapes}
 
-    def __init__(self):
-        # Calibration baselines (updated over first few frames)
-        self.baseline_face_height = None
-        self.baseline_brow_height_l = None
-        self.baseline_brow_height_r = None
-        self.calibration_frames = 0
-        self.calibration_target = 30  # frames to average
 
-        # Running averages for calibration
-        self._cal_face_h = []
-        self._cal_brow_l = []
-        self._cal_brow_r = []
+def extract_features(blendshapes: dict, landmarks, prev_head=None) -> dict:
+    """Extract 17 NERVE features from blendshapes and landmarks.
 
-    def extract(self, landmarks) -> dict:
-        """Extract 17 features from face mesh landmarks.
+    Blendshapes give us precise facial expressions (0-1 scores).
+    Landmarks give us head position and distance.
 
-        Returns dict with keys matching NERVE protocol order:
-            headX, headY, headZ, headDist,
-            leftEye, rightEye, gazeX, gazeY,
-            mouthW, mouthH, jaw, lips,
-            browL, browR, blinkL, blinkR, expression
-        """
-        lm = landmarks
+    Returns dict matching NERVE protocol order.
+    """
+    # ── Head pose from landmarks ──
+    # Nose tip is landmark 1, used for head position
+    nose = landmarks[1]
+    head_x = (nose.x - 0.5) * 2.0    # -1 to 1
+    head_y = -(nose.y - 0.5) * 2.0   # -1 to 1 (up = positive)
 
-        # Reference measurements for normalization
-        face_height = distance_2d(lm[FOREHEAD_CENTER], lm[JAW_TIP])
+    # Roll from eye positions (landmarks 33=left outer, 263=right outer)
+    left_eye = landmarks[33]
+    right_eye = landmarks[263]
+    eye_angle = np.arctan2(
+        right_eye.y - left_eye.y,
+        right_eye.x - left_eye.x
+    )
+    head_z = float(np.clip(eye_angle / (np.pi / 4), -1.0, 1.0))
 
-        # Calibrate baseline
-        if self.calibration_frames < self.calibration_target:
-            self._cal_face_h.append(face_height)
-            self.calibration_frames += 1
-            if self.calibration_frames == self.calibration_target:
-                self.baseline_face_height = np.mean(self._cal_face_h)
+    # Distance from face height (forehead=10, chin=152)
+    forehead = landmarks[10]
+    chin = landmarks[152]
+    face_h = np.sqrt((forehead.x - chin.x)**2 + (forehead.y - chin.y)**2)
+    head_dist = float(np.clip(face_h / 0.4, 0.0, 1.0))  # ~0.3-0.4 at normal distance
 
-        if self.baseline_face_height is None:
-            self.baseline_face_height = face_height
+    # ── Eyes from blendshapes ──
+    # eyeWide = how open, eyeBlink = how closed
+    # Openness = wide - blink, normalized
+    blink_l_raw = blendshapes.get('eyeBlinkLeft', 0.0)
+    blink_r_raw = blendshapes.get('eyeBlinkRight', 0.0)
+    wide_l = blendshapes.get('eyeWideLeft', 0.0)
+    wide_r = blendshapes.get('eyeWideRight', 0.0)
 
-        norm = self.baseline_face_height if self.baseline_face_height > 0.01 else 0.15
+    left_eye_open = float(np.clip(1.0 - blink_l_raw + wide_l * 0.3, 0.0, 1.0))
+    right_eye_open = float(np.clip(1.0 - blink_r_raw + wide_r * 0.3, 0.0, 1.0))
 
-        # ── Head pose (from nose position relative to face center) ──
-        nose = lm[NOSE_TIP]
-        # X: left-right rotation (yaw) — nose tip horizontal displacement
-        head_x = (nose.x - 0.5) * 2.0  # -1 to 1
-        # Y: up-down rotation (pitch) — nose tip vertical displacement
-        head_y = -(nose.y - 0.5) * 2.0  # -1 to 1 (inverted: up = positive)
-        # Z: tilt (roll) — angle between eyes
-        left_eye_center = lm[LEFT_EYE_INNER]
-        right_eye_center = lm[RIGHT_EYE_INNER]
-        eye_angle = np.arctan2(
-            right_eye_center.y - left_eye_center.y,
-            right_eye_center.x - left_eye_center.x
-        )
-        head_z = np.clip(eye_angle / (np.pi / 4), -1.0, 1.0)  # normalized tilt
+    # ── Gaze from blendshapes ──
+    look_in_l = blendshapes.get('eyeLookInLeft', 0.0)    # left eye looking right
+    look_out_l = blendshapes.get('eyeLookOutLeft', 0.0)   # left eye looking left
+    look_in_r = blendshapes.get('eyeLookInRight', 0.0)    # right eye looking left
+    look_out_r = blendshapes.get('eyeLookOutRight', 0.0)  # right eye looking right
 
-        # Distance — face height relative to baseline (closer = larger)
-        head_dist = np.clip(face_height / norm, 0.0, 2.0) / 2.0
+    # Combine: positive = looking right, negative = looking left
+    gaze_x_l = look_in_l - look_out_l   # left eye: in=right, out=left
+    gaze_x_r = look_out_r - look_in_r   # right eye: out=right, in=left
+    gaze_x = float(np.clip((gaze_x_l + gaze_x_r) / 2, -1.0, 1.0))
 
-        # ── Eyes (openness) ──
-        left_eye_open = distance_2d(lm[LEFT_EYE_TOP], lm[LEFT_EYE_BOTTOM]) / norm
-        right_eye_open = distance_2d(lm[RIGHT_EYE_TOP], lm[RIGHT_EYE_BOTTOM]) / norm
-        # Normalize to ~0-1 range (typical open eye is ~0.04-0.06 of face height)
-        left_eye = np.clip(left_eye_open / 0.06, 0.0, 1.0)
-        right_eye = np.clip(right_eye_open / 0.06, 0.0, 1.0)
+    look_up_l = blendshapes.get('eyeLookUpLeft', 0.0)
+    look_up_r = blendshapes.get('eyeLookUpRight', 0.0)
+    look_down_l = blendshapes.get('eyeLookDownLeft', 0.0)
+    look_down_r = blendshapes.get('eyeLookDownRight', 0.0)
+    gaze_y = float(np.clip(
+        ((look_up_l + look_up_r) - (look_down_l + look_down_r)) / 2,
+        -1.0, 1.0
+    ))
 
-        # ── Gaze (iris position within eye) ──
-        try:
-            # Iris landmarks available with refine_landmarks=True
-            left_iris = lm[LEFT_IRIS_CENTER]
-            li_inner = lm[LEFT_EYE_INNER]
-            li_outer = lm[LEFT_EYE_OUTER]
-            eye_width_l = distance_2d(li_inner, li_outer)
-            if eye_width_l > 0.001:
-                gaze_x_l = (left_iris.x - (li_inner.x + li_outer.x) / 2) / (eye_width_l / 2)
-            else:
-                gaze_x_l = 0.0
+    # ── Mouth from blendshapes ──
+    jaw_open = blendshapes.get('jawOpen', 0.0)
+    mouth_close = blendshapes.get('mouthClose', 0.0)
 
-            right_iris = lm[RIGHT_IRIS_CENTER]
-            ri_inner = lm[RIGHT_EYE_INNER]
-            ri_outer = lm[RIGHT_EYE_OUTER]
-            eye_width_r = distance_2d(ri_inner, ri_outer)
-            if eye_width_r > 0.001:
-                gaze_x_r = (right_iris.x - (ri_inner.x + ri_outer.x) / 2) / (eye_width_r / 2)
-            else:
-                gaze_x_r = 0.0
+    # Mouth width: smile widens, pucker narrows
+    smile_l = blendshapes.get('mouthSmileLeft', 0.0)
+    smile_r = blendshapes.get('mouthSmileRight', 0.0)
+    stretch_l = blendshapes.get('mouthStretchLeft', 0.0)
+    stretch_r = blendshapes.get('mouthStretchRight', 0.0)
+    pucker = blendshapes.get('mouthPucker', 0.0)
+    mouth_w = float(np.clip(
+        (smile_l + smile_r + stretch_l + stretch_r) / 4 - pucker * 0.5 + 0.3,
+        0.0, 1.0
+    ))
 
-            gaze_x = np.clip((gaze_x_l + gaze_x_r) / 2, -1.0, 1.0)
+    # Mouth height: jaw open
+    mouth_h = float(np.clip(jaw_open, 0.0, 1.0))
 
-            # Vertical gaze
-            left_eye_mid_y = (lm[LEFT_EYE_TOP].y + lm[LEFT_EYE_BOTTOM].y) / 2
-            right_eye_mid_y = (lm[RIGHT_EYE_TOP].y + lm[RIGHT_EYE_BOTTOM].y) / 2
-            gaze_y_l = (left_iris.y - left_eye_mid_y) / (left_eye_open + 0.001)
-            gaze_y_r = (right_iris.y - right_eye_mid_y) / (right_eye_open + 0.001)
-            gaze_y = np.clip(-(gaze_y_l + gaze_y_r) / 2, -1.0, 1.0)
-        except (IndexError, AttributeError):
-            gaze_x = 0.0
-            gaze_y = 0.0
+    # Jaw
+    jaw = float(np.clip(jaw_open, 0.0, 1.0))
 
-        # ── Mouth ──
-        mouth_w_raw = distance_2d(lm[MOUTH_LEFT], lm[MOUTH_RIGHT]) / norm
-        mouth_h_raw = distance_2d(lm[MOUTH_TOP], lm[MOUTH_BOTTOM]) / norm
-        mouth_w = np.clip(mouth_w_raw / 0.35, 0.0, 1.0)
-        mouth_h = np.clip(mouth_h_raw / 0.15, 0.0, 1.0)
+    # Lips: pucker/close
+    lips = float(np.clip(pucker + mouth_close * 0.5, 0.0, 1.0))
 
-        # Jaw openness — distance from chin to nose
-        jaw_raw = distance_2d(lm[JAW_TIP], lm[NOSE_TIP]) / norm
-        jaw = np.clip((jaw_raw - 0.3) / 0.2, 0.0, 1.0)  # offset baseline
+    # ── Eyebrows from blendshapes ──
+    brow_inner_up = blendshapes.get('browInnerUp', 0.0)
+    brow_outer_up_l = blendshapes.get('browOuterUpLeft', 0.0)
+    brow_outer_up_r = blendshapes.get('browOuterUpRight', 0.0)
+    brow_down_l = blendshapes.get('browDownLeft', 0.0)
+    brow_down_r = blendshapes.get('browDownRight', 0.0)
 
-        # Lip pursing — upper to lower lip distance vs mouth height
-        lip_dist = distance_2d(lm[UPPER_LIP_TOP], lm[LOWER_LIP_BOTTOM]) / norm
-        lips = np.clip(lip_dist / 0.15, 0.0, 1.0)
+    brow_l = float(np.clip(brow_inner_up * 0.5 + brow_outer_up_l - brow_down_l * 0.5 + 0.5, 0.0, 1.0))
+    brow_r = float(np.clip(brow_inner_up * 0.5 + brow_outer_up_r - brow_down_r * 0.5 + 0.5, 0.0, 1.0))
 
-        # ── Eyebrows ──
-        brow_l_height = distance_2d(lm[LEFT_BROW_MID], lm[LEFT_EYE_TOP]) / norm
-        brow_r_height = distance_2d(lm[RIGHT_BROW_MID], lm[RIGHT_EYE_TOP]) / norm
-        brow_l = np.clip(brow_l_height / 0.06, 0.0, 1.0)
-        brow_r = np.clip(brow_r_height / 0.06, 0.0, 1.0)
+    # ── Blinks (binary threshold) ──
+    BLINK_THRESHOLD = 0.5
+    blink_l = 1.0 if blink_l_raw > BLINK_THRESHOLD else 0.0
+    blink_r = 1.0 if blink_r_raw > BLINK_THRESHOLD else 0.0
 
-        # ── Blinks (binary — eye aspect ratio threshold) ──
-        EAR_THRESHOLD = 0.2
-        blink_l = 1.0 if left_eye < EAR_THRESHOLD else 0.0
-        blink_r = 1.0 if right_eye < EAR_THRESHOLD else 0.0
+    # ── Expression (composite activity) ──
+    frown_l = blendshapes.get('mouthFrownLeft', 0.0)
+    frown_r = blendshapes.get('mouthFrownRight', 0.0)
+    expression = float(np.clip(
+        jaw_open * 0.3 +
+        (smile_l + smile_r) * 0.15 +
+        (frown_l + frown_r) * 0.1 +
+        abs(brow_l - 0.5) * 0.15 +
+        abs(brow_r - 0.5) * 0.15,
+        0.0, 1.0
+    ))
 
-        # ── Expression (composite — mouth + brow activity) ──
-        expression = np.clip(
-            (mouth_h * 0.4 + abs(brow_l - 0.5) * 0.3 + abs(brow_r - 0.5) * 0.3),
-            0.0, 1.0
-        )
-
-        return {
-            'headX': float(head_x),
-            'headY': float(head_y),
-            'headZ': float(head_z),
-            'headDist': float(head_dist),
-            'leftEye': float(left_eye),
-            'rightEye': float(right_eye),
-            'gazeX': float(gaze_x),
-            'gazeY': float(gaze_y),
-            'mouthW': float(mouth_w),
-            'mouthH': float(mouth_h),
-            'jaw': float(jaw),
-            'lips': float(lips),
-            'browL': float(brow_l),
-            'browR': float(brow_r),
-            'blinkL': float(blink_l),
-            'blinkR': float(blink_r),
-            'expression': float(expression),
-        }
+    return {
+        'headX': float(head_x),
+        'headY': float(head_y),
+        'headZ': head_z,
+        'headDist': head_dist,
+        'leftEye': left_eye_open,
+        'rightEye': right_eye_open,
+        'gazeX': gaze_x,
+        'gazeY': gaze_y,
+        'mouthW': mouth_w,
+        'mouthH': mouth_h,
+        'jaw': jaw,
+        'lips': lips,
+        'browL': brow_l,
+        'browR': brow_r,
+        'blinkL': blink_l,
+        'blinkR': blink_r,
+        'expression': expression,
+    }
 
 
 def pack_nerve_packet(features: dict) -> bytes:
@@ -242,7 +226,6 @@ def pack_nerve_packet(features: dict) -> bytes:
     version = struct.pack('<H', 1)
     face_count = struct.pack('<H', 1)
 
-    # 17 floats in protocol order
     floats = struct.pack('<17f',
         features['headX'],
         features['headY'],
@@ -268,6 +251,39 @@ def pack_nerve_packet(features: dict) -> bytes:
     return magic + version + face_count + floats + timestamp
 
 
+def draw_landmarks_on_frame(frame, landmarks, w, h):
+    """Draw simple face landmark dots on the frame."""
+    # Draw a subset of landmarks for performance
+    key_indices = [
+        1,    # nose tip
+        33, 263,  # eye outer corners
+        61, 291,  # mouth corners
+        13, 14,   # mouth top/bottom
+        152,  # chin
+        10,   # forehead
+        159, 145,  # left eye top/bottom
+        386, 374,  # right eye top/bottom
+    ]
+    for idx in key_indices:
+        lm = landmarks[idx]
+        cx = int(lm.x * w)
+        cy = int(lm.y * h)
+        cv2.circle(frame, (cx, cy), 2, (100, 255, 100), -1)
+
+    # Draw face oval outline
+    oval_indices = [10, 338, 297, 332, 284, 251, 389, 356, 454, 323,
+                    361, 288, 397, 365, 379, 378, 400, 377, 152, 148,
+                    176, 149, 150, 136, 172, 58, 132, 93, 234, 127,
+                    162, 21, 54, 103, 67, 109, 10]
+    for i in range(len(oval_indices) - 1):
+        p1 = landmarks[oval_indices[i]]
+        p2 = landmarks[oval_indices[i + 1]]
+        cv2.line(frame,
+                 (int(p1.x * w), int(p1.y * h)),
+                 (int(p2.x * w), int(p2.y * h)),
+                 (120, 80, 255), 1)
+
+
 def main():
     parser = argparse.ArgumentParser(description='NERVE Bridge — Face to VCV Rack')
     parser.add_argument('--port', type=int, default=9000, help='UDP port (default: 9000)')
@@ -277,24 +293,33 @@ def main():
     parser.add_argument('--fps', type=int, default=30, help='Target FPS (default: 30)')
     args = parser.parse_args()
 
+    # ── Download model if needed ──
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    model_path = ensure_model(script_dir)
+
     # ── Setup UDP ──
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     target = (args.host, args.port)
-    print(f"NERVE Bridge → {args.host}:{args.port}")
+    print(f"NERVE Bridge -> {args.host}:{args.port}")
 
-    # ── Setup MediaPipe ──
-    mp_face = mp.solutions.face_mesh
-    face_mesh = mp_face.FaceMesh(
-        static_image_mode=False,
-        max_num_faces=1,
-        refine_landmarks=True,  # enables iris tracking (landmarks 468-477)
-        min_detection_confidence=0.5,
+    # ── Setup MediaPipe FaceLandmarker (new Tasks API) ──
+    BaseOptions = mp.tasks.BaseOptions
+    FaceLandmarker = mp.tasks.vision.FaceLandmarker
+    FaceLandmarkerOptions = mp.tasks.vision.FaceLandmarkerOptions
+    VisionRunningMode = mp.tasks.vision.RunningMode
+
+    options = FaceLandmarkerOptions(
+        base_options=BaseOptions(model_asset_path=model_path),
+        running_mode=VisionRunningMode.VIDEO,
+        num_faces=1,
+        min_face_detection_confidence=0.5,
+        min_face_presence_confidence=0.5,
         min_tracking_confidence=0.5,
+        output_face_blendshapes=True,
+        output_facial_transformation_matrixes=False,
     )
 
-    if args.show:
-        mp_drawing = mp.solutions.drawing_utils
-        mp_drawing_styles = mp.solutions.drawing_styles
+    landmarker = FaceLandmarker.create_from_options(options)
 
     # ── Setup Camera ──
     cap = cv2.VideoCapture(args.camera)
@@ -310,11 +335,11 @@ def main():
     h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     print(f"Camera: {w}x{h}")
 
-    extractor = FaceFeatureExtractor()
     frame_time = 1.0 / args.fps
     frame_count = 0
     fps_timer = time.time()
     actual_fps = 0.0
+    timestamp_ms = 0
 
     print("Tracking... (Ctrl+C or 'q' to quit)")
     print()
@@ -333,13 +358,16 @@ def main():
 
             # Convert BGR to RGB for MediaPipe
             rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            rgb.flags.writeable = False
-            results = face_mesh.process(rgb)
-            rgb.flags.writeable = True
+            mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
 
-            if results.multi_face_landmarks:
-                face_landmarks = results.multi_face_landmarks[0]
-                features = extractor.extract(face_landmarks.landmark)
+            # Detect face landmarks
+            timestamp_ms += int(frame_time * 1000)
+            result = landmarker.detect_for_video(mp_image, timestamp_ms)
+
+            if result.face_landmarks and result.face_blendshapes:
+                landmarks = result.face_landmarks[0]
+                blendshapes = get_blendshape_dict(result.face_blendshapes[0])
+                features = extract_features(blendshapes, landmarks)
 
                 # Send UDP packet
                 packet = pack_nerve_packet(features)
@@ -352,30 +380,17 @@ def main():
                     actual_fps = frame_count / (now - fps_timer)
                     frame_count = 0
                     fps_timer = now
-                    # Print compact status line
                     print(f"\r  {actual_fps:.0f} fps | "
                           f"head({features['headX']:+.2f},{features['headY']:+.2f}) "
                           f"eyes({features['leftEye']:.2f},{features['rightEye']:.2f}) "
                           f"mouth({features['mouthW']:.2f},{features['mouthH']:.2f}) "
+                          f"jaw({features['jaw']:.2f}) "
                           f"blink({'L' if features['blinkL'] else '-'}{'R' if features['blinkR'] else '-'})",
                           end='', flush=True)
 
-                # Draw face mesh if showing preview
+                # Draw landmarks if showing preview
                 if args.show:
-                    mp_drawing.draw_landmarks(
-                        image=frame,
-                        landmark_list=face_landmarks,
-                        connections=mp_face.FACEMESH_TESSELATION,
-                        landmark_drawing_spec=None,
-                        connection_drawing_spec=mp_drawing_styles.get_default_face_mesh_tesselation_style(),
-                    )
-                    mp_drawing.draw_landmarks(
-                        image=frame,
-                        landmark_list=face_landmarks,
-                        connections=mp_face.FACEMESH_IRISES,
-                        landmark_drawing_spec=None,
-                        connection_drawing_spec=mp_drawing_styles.get_default_face_mesh_iris_connections_style(),
-                    )
+                    draw_landmarks_on_frame(frame, landmarks, w, h)
             else:
                 if args.show:
                     cv2.putText(frame, "No face detected", (20, 40),
@@ -401,7 +416,7 @@ def main():
         if args.show:
             cv2.destroyAllWindows()
         sock.close()
-        face_mesh.close()
+        landmarker.close()
         print("NERVE Bridge closed.")
 
 
