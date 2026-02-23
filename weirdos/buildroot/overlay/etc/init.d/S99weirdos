@@ -1,119 +1,328 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════
-# WeirdOS v0.1.0 — System startup
-# Launches bridge + VCV Rack as a dedicated synth appliance
+# WeirdOS v0.2.0 — System startup
+# Launches all bridges + VCV Rack as a dedicated synth appliance
+#
+# Bridge stack:
+#   nerve_bridge.py  — face tracking → UDP (NERVE/SKULL/MIRROR modules)
+#   kinect_bridge.py — depth tracking → UDP (DEPTH/BODY modules) [if Kinect found]
+#   llm_server.py    — WeirdMaker local AI [if AI_BACKEND=local]
 # ═══════════════════════════════════════════════════════════
 
 WEIRDOS_CONF="/etc/weirdos/weirdos.conf"
 WEIRDOS_USER="weird"
 WEIRDOS_HOME="/home/weird"
+BRIDGE_DIR="/home/weird/bridge"
 LOG_DIR="/var/log/weirdos"
+PYTHON="/usr/bin/python3"
 
-# Source configuration
+# ── Source configuration ──
 [ -f "$WEIRDOS_CONF" ] && source "$WEIRDOS_CONF"
 
-# Defaults
+# ── Defaults (if not set in conf) ──
+CAMERA_BACKEND="${CAMERA_BACKEND:-auto}"
+CAMERA_MODE="${CAMERA_MODE:-track120}"
+CAMERA_AUTOFOCUS="${CAMERA_AUTOFOCUS:-yes}"
 CAMERA_DEVICE="${CAMERA_DEVICE:-/dev/video0}"
-BRIDGE_PORT="${BRIDGE_PORT:-9000}"
+KINECT_ENABLE="${KINECT_ENABLE:-auto}"
+KINECT_NEAR_M="${KINECT_NEAR_M:-0.5}"
+KINECT_FAR_M="${KINECT_FAR_M:-4.0}"
+AI_BACKEND="${AI_BACKEND:-local}"
+BRIDGE_HOST="${BRIDGE_HOST:-127.0.0.1}"
+NERVE_PORT="${NERVE_PORT:-9000}"
+SKULL_PORT="${SKULL_PORT:-9001}"
+MIRROR_PORT="${MIRROR_PORT:-9002}"
+DEPTH_PORT="${DEPTH_PORT:-9005}"
+SKEL_PORT="${SKEL_PORT:-9006}"
 AUDIO_DEVICE="${AUDIO_DEVICE:-hw:0}"
 JACK_SAMPLERATE="${JACK_SAMPLERATE:-48000}"
 JACK_BUFSIZE="${JACK_BUFSIZE:-256}"
+JACK_PERIODS="${JACK_PERIODS:-2}"
 DISPLAY_MODE="${DISPLAY_MODE:-wayland}"
+WEIRDSTUDIO_ENABLE="${WEIRDSTUDIO_ENABLE:-yes}"
+WEIRDSTUDIO_PORT="${WEIRDSTUDIO_PORT:-80}"
 
+
+# ────────────────────────────────────────────────────────────
+# Helper: detect Pi Camera Module via libcamera
+# Returns 0 (found) or 1 (not found)
+# ────────────────────────────────────────────────────────────
+check_pi_camera() {
+    # Try libcamera-hello list (fastest check, no preview)
+    if command -v rpicam-hello &>/dev/null; then
+        rpicam-hello --list-cameras 2>/dev/null | grep -q "IMX708" && return 0
+        rpicam-hello --list-cameras 2>/dev/null | grep -q "Available" && return 0
+    fi
+    # Fallback: check for imx708 device tree overlay
+    [ -e /sys/bus/i2c/devices/*/imx708 ] && return 0
+    # Fallback: check /sys for camera driver
+    find /sys/bus/platform -name "imx708" 2>/dev/null | grep -q . && return 0
+    # Fallback: picamera2 Python check
+    $PYTHON -c "from picamera2 import Picamera2; cams=Picamera2.global_camera_info(); exit(0 if len(cams)>0 else 1)" 2>/dev/null && return 0
+    return 1
+}
+
+
+# ────────────────────────────────────────────────────────────
+# Helper: detect Kinect device via USB
+# Returns 0 (found) or 1 (not found)
+# ────────────────────────────────────────────────────────────
+check_kinect() {
+    if command -v lsusb &>/dev/null; then
+        # Microsoft VID = 045e
+        # Azure: 097c/097d  KOne: 02c4/02c3/02bb  K360: 02ae/02a8
+        lsusb 2>/dev/null | grep -qi "045e:0" && return 0
+    fi
+    # Fallback: check /sys
+    if ls /sys/bus/usb/devices/*/idVendor 2>/dev/null | xargs grep -l "045e" 2>/dev/null | grep -q .; then
+        return 0
+    fi
+    return 1
+}
+
+
+# ────────────────────────────────────────────────────────────
+# Build nerve_bridge.py arguments based on configuration
+# ────────────────────────────────────────────────────────────
+build_bridge_args() {
+    BRIDGE_ARGS="--host ${BRIDGE_HOST}"
+    BRIDGE_ARGS="${BRIDGE_ARGS} --port ${NERVE_PORT} ${SKULL_PORT} ${MIRROR_PORT}"
+
+    if [ "$CAMERA_BACKEND" = "opencv" ]; then
+        BRIDGE_ARGS="${BRIDGE_ARGS} --no-picamera"
+        BRIDGE_ARGS="${BRIDGE_ARGS} --camera 0"
+    elif [ "$CAMERA_BACKEND" = "picamera" ]; then
+        BRIDGE_ARGS="${BRIDGE_ARGS} --camera-mode ${CAMERA_MODE}"
+        [ "$CAMERA_AUTOFOCUS" = "no" ] && BRIDGE_ARGS="${BRIDGE_ARGS} --no-autofocus"
+    else
+        # auto: nerve_bridge.py detects itself, pass mode hints
+        BRIDGE_ARGS="${BRIDGE_ARGS} --camera-mode ${CAMERA_MODE}"
+        [ "$CAMERA_AUTOFOCUS" = "no" ] && BRIDGE_ARGS="${BRIDGE_ARGS} --no-autofocus"
+    fi
+
+    echo "$BRIDGE_ARGS"
+}
+
+
+# ────────────────────────────────────────────────────────────
+# START
+# ────────────────────────────────────────────────────────────
 case "$1" in
     start)
-        echo "╔══════════════════════════════════╗"
-        echo "║  WeirdOS v0.1.0 — Starting up    ║"
-        echo "╚══════════════════════════════════╝"
+        echo "╔══════════════════════════════════════╗"
+        echo "║   WeirdOS v0.2.0 — Starting up       ║"
+        echo "╚══════════════════════════════════════╝"
 
         mkdir -p "$LOG_DIR"
 
         # ── Step 1: Configure audio ──
-        echo "[weirdos] Configuring audio..."
-
-        # Set ALSA defaults
-        if [ -f /etc/asound.conf ]; then
-            echo "[weirdos] ALSA configured"
-        fi
-
-        # Start JACK server
-        echo "[weirdos] Starting JACK (rate=${JACK_SAMPLERATE}, buf=${JACK_BUFSIZE})..."
+        echo "[weirdos] Configuring audio (JACK @ ${JACK_SAMPLERATE}Hz / ${JACK_BUFSIZE} frames)..."
         su -l "$WEIRDOS_USER" -c \
-            "jackd -d alsa -d ${AUDIO_DEVICE} -r ${JACK_SAMPLERATE} -p ${JACK_BUFSIZE} -n 2 &" \
-            > "$LOG_DIR/jack.log" 2>&1
+            "jackd -d alsa -d ${AUDIO_DEVICE} -r ${JACK_SAMPLERATE} -p ${JACK_BUFSIZE} -n ${JACK_PERIODS} &" \
+            >> "$LOG_DIR/jack.log" 2>&1
         sleep 2
 
-        # ── Step 2: Wait for camera ──
-        echo "[weirdos] Waiting for camera at ${CAMERA_DEVICE}..."
-        CAMERA_TIMEOUT=30
-        CAMERA_WAIT=0
-        while [ ! -e "$CAMERA_DEVICE" ] && [ $CAMERA_WAIT -lt $CAMERA_TIMEOUT ]; do
-            sleep 1
-            CAMERA_WAIT=$((CAMERA_WAIT + 1))
-        done
+        # ── Step 2: Detect and start camera bridge ──
+        CAMERA_FOUND=false
 
-        if [ -e "$CAMERA_DEVICE" ]; then
-            echo "[weirdos] Camera found: ${CAMERA_DEVICE}"
-
-            # ── Step 3: Start the face tracking bridge ──
-            echo "[weirdos] Starting face tracking bridge..."
-            su -l "$WEIRDOS_USER" -c \
-                "weirdsynths-bridge --device ${CAMERA_DEVICE} --port ${BRIDGE_PORT} &" \
-                > "$LOG_DIR/bridge.log" 2>&1
-            sleep 1
+        if [ "$CAMERA_BACKEND" = "opencv" ]; then
+            # Forced OpenCV mode — wait for V4L2 device
+            echo "[weirdos] Waiting for camera (OpenCV/V4L2 mode)..."
+            for i in $(seq 1 20); do
+                [ -e "$CAMERA_DEVICE" ] && CAMERA_FOUND=true && break
+                sleep 1
+            done
         else
-            echo "[weirdos] WARNING: No camera found after ${CAMERA_TIMEOUT}s"
-            echo "[weirdos] VCV Rack will start without face tracking"
+            # Pi Camera (auto or explicit) — check via libcamera
+            echo "[weirdos] Checking for Pi Camera Module (libcamera)..."
+            sleep 1   # give libcamera driver a moment to settle
+            if check_pi_camera; then
+                echo "[weirdos] ✓ Pi Camera Module detected (IMX708)"
+                CAMERA_FOUND=true
+            elif [ -e "$CAMERA_DEVICE" ]; then
+                echo "[weirdos] Pi Camera not found, USB camera at ${CAMERA_DEVICE} detected"
+                CAMERA_FOUND=true
+            else
+                echo "[weirdos] WARNING: No camera found"
+            fi
         fi
 
-        # ── Step 4: Start Weston compositor ──
+        if [ "$CAMERA_FOUND" = "true" ]; then
+            BRIDGE_ARGS=$(build_bridge_args)
+            echo "[weirdos] Starting face tracking bridge..."
+            echo "[weirdos]   nerve_bridge.py ${BRIDGE_ARGS}"
+            su -l "$WEIRDOS_USER" -c \
+                "cd ${BRIDGE_DIR} && ${PYTHON} nerve_bridge.py ${BRIDGE_ARGS} &" \
+                >> "$LOG_DIR/bridge.log" 2>&1
+            sleep 1
+            echo "[weirdos] ✓ Face tracking bridge running"
+        else
+            echo "[weirdos] No camera — face tracking disabled"
+        fi
+
+        # ── Step 3: Detect and start Kinect depth bridge ──
+        START_KINECT=false
+        if [ "$KINECT_ENABLE" = "yes" ]; then
+            START_KINECT=true
+        elif [ "$KINECT_ENABLE" = "auto" ] && check_kinect; then
+            echo "[weirdos] ✓ Kinect device detected"
+            START_KINECT=true
+        fi
+
+        if [ "$START_KINECT" = "true" ]; then
+            KINECT_ARGS="--device auto --host ${BRIDGE_HOST}"
+            KINECT_ARGS="${KINECT_ARGS} --depth-port ${DEPTH_PORT} --skel-port ${SKEL_PORT}"
+            KINECT_ARGS="${KINECT_ARGS} --near ${KINECT_NEAR_M} --far ${KINECT_FAR_M}"
+            echo "[weirdos] Starting Kinect depth bridge..."
+            echo "[weirdos]   kinect_bridge.py ${KINECT_ARGS}"
+            su -l "$WEIRDOS_USER" -c \
+                "cd ${BRIDGE_DIR} && ${PYTHON} kinect_bridge.py ${KINECT_ARGS} &" \
+                >> "$LOG_DIR/kinect.log" 2>&1
+            sleep 1
+            echo "[weirdos] ✓ Kinect depth bridge running"
+        fi
+
+        # ── Step 4: Start AI backend (WeirdMaker) ──
+        if [ "$AI_BACKEND" = "local" ] || [ "$AI_BACKEND" = "hybrid" ]; then
+            if [ -f "${WEIRDOS_HOME}/bridge/llm_server.py" ]; then
+                echo "[weirdos] Starting local AI (Qwen2.5-Coder on Hailo-10H)..."
+                su -l "$WEIRDOS_USER" -c \
+                    "cd ${BRIDGE_DIR} && ${PYTHON} llm_server.py &" \
+                    >> "$LOG_DIR/llm.log" 2>&1
+                sleep 2
+                echo "[weirdos] ✓ Local AI running"
+            fi
+        fi
+
+        # ── Step 5: Start WeirdStudio web UI ──
+        if [ "$WEIRDSTUDIO_ENABLE" = "yes" ]; then
+            if [ -f "${WEIRDOS_HOME}/weirdstudio/server.py" ]; then
+                echo "[weirdos] Starting WeirdStudio (http://weirdbox.local:${WEIRDSTUDIO_PORT})..."
+                su -l "$WEIRDOS_USER" -c \
+                    "cd ${WEIRDOS_HOME}/weirdstudio && ${PYTHON} server.py --port ${WEIRDSTUDIO_PORT} &" \
+                    >> "$LOG_DIR/weirdstudio.log" 2>&1
+                sleep 1
+                echo "[weirdos] ✓ WeirdStudio running"
+            fi
+        fi
+
+        # ── Step 5b: Start Ideas Generator daemon ──
+        if [ -f "${BRIDGE_DIR}/ideas_daemon.py" ]; then
+            IDEAS_STORAGE="${IDEAS_STORAGE_PATH:-/home/weird/ideas}"
+            IDEAS_SCHED="${IDEAS_TIME:-06:00}"
+            IDEAS_APIPORT="${IDEAS_API_PORT:-9010}"
+            # Ensure storage dir exists (external HDD may need a moment to mount)
+            if [ ! -d "$IDEAS_STORAGE" ]; then
+                mkdir -p "$IDEAS_STORAGE" 2>/dev/null || IDEAS_STORAGE="/home/weird/ideas"
+                mkdir -p "$IDEAS_STORAGE"
+            fi
+            echo "[weirdos] Starting Ideas Generator (${IDEAS_STORAGE} @ ${IDEAS_SCHED})..."
+            su -l "$WEIRDOS_USER" -c \
+                "AI_BACKEND=${AI_BACKEND} IDEAS_STORAGE_PATH=${IDEAS_STORAGE} IDEAS_TIME=${IDEAS_SCHED} \
+                 ${PYTHON} ${BRIDGE_DIR}/ideas_daemon.py --port ${IDEAS_APIPORT} &" \
+                >> "$LOG_DIR/ideas.log" 2>&1
+            sleep 1
+            echo "[weirdos] ✓ Ideas Generator running (API port ${IDEAS_APIPORT})"
+        fi
+
+        # ── Step 6: Start Weston compositor ──
         if [ "$DISPLAY_MODE" = "wayland" ]; then
             echo "[weirdos] Starting Weston compositor..."
             su -l "$WEIRDOS_USER" -c \
                 "weston --tty=1 --backend=drm-backend.so &" \
-                > "$LOG_DIR/weston.log" 2>&1
+                >> "$LOG_DIR/weston.log" 2>&1
             sleep 2
             export WAYLAND_DISPLAY=wayland-0
         fi
 
-        # ── Step 5: Launch VCV Rack ──
-        echo "[weirdos] Launching VCV Rack..."
-        su -l "$WEIRDOS_USER" -c \
-            "WAYLAND_DISPLAY=wayland-0 vcvrack" \
-            > "$LOG_DIR/vcvrack.log" 2>&1 &
+        # ── Step 7: Launch VCV Rack ──
+        if [ "$DISPLAY_MODE" = "wayland" ]; then
+            echo "[weirdos] Launching VCV Rack..."
+            su -l "$WEIRDOS_USER" -c \
+                "WAYLAND_DISPLAY=wayland-0 vcvrack" \
+                >> "$LOG_DIR/vcvrack.log" 2>&1 &
+        fi
 
-        echo "[weirdos] ✓ WeirdOS is running"
-        echo "[weirdos] Bridge: UDP port ${BRIDGE_PORT}"
-        echo "[weirdos] Audio: JACK @ ${JACK_SAMPLERATE}Hz / ${JACK_BUFSIZE} frames"
+        echo ""
+        echo "[weirdos] ✓ WeirdOS v0.2.0 is running"
+        echo "[weirdos]   NERVE  → port ${NERVE_PORT}"
+        echo "[weirdos]   SKULL  → port ${SKULL_PORT}"
+        echo "[weirdos]   MIRROR → port ${MIRROR_PORT}"
+        [ "$START_KINECT" = "true" ] && echo "[weirdos]   DEPTH  → port ${DEPTH_PORT}"
+        [ "$START_KINECT" = "true" ] && echo "[weirdos]   BODY   → port ${SKEL_PORT}"
+        echo "[weirdos]   Audio  → JACK @ ${JACK_SAMPLERATE}Hz / ${JACK_BUFSIZE} frames"
+        echo "[weirdos]   AI     → ${AI_BACKEND}"
         ;;
 
+
+    # ────────────────────────────────────────────────────────
     stop)
         echo "[weirdos] Shutting down..."
-        killall -SIGTERM Rack 2>/dev/null
+        killall -SIGTERM Rack    2>/dev/null
         sleep 1
-        killall -SIGTERM python3 2>/dev/null
-        killall -SIGTERM jackd 2>/dev/null
-        killall -SIGTERM weston 2>/dev/null
+        killall -SIGTERM -f "nerve_bridge.py"  2>/dev/null
+        killall -SIGTERM -f "kinect_bridge.py" 2>/dev/null
+        killall -SIGTERM -f "ideas_daemon.py"  2>/dev/null
+        killall -SIGTERM -f "llm_server.py"    2>/dev/null
+        killall -SIGTERM -f "weirdstudio"      2>/dev/null
+        killall -SIGTERM jackd   2>/dev/null
+        killall -SIGTERM weston  2>/dev/null
+        sleep 1
         echo "[weirdos] Stopped"
         ;;
 
+
+    # ────────────────────────────────────────────────────────
     restart)
         $0 stop
         sleep 2
         $0 start
         ;;
 
+
+    # ────────────────────────────────────────────────────────
+    restart-bridge)
+        # Restart only the bridge processes, not JACK/Rack
+        echo "[weirdos] Restarting bridges..."
+        killall -SIGTERM -f "nerve_bridge.py"  2>/dev/null
+        killall -SIGTERM -f "kinect_bridge.py" 2>/dev/null
+        sleep 1
+        CAMERA_ARGS=$(build_bridge_args)
+        su -l "$WEIRDOS_USER" -c \
+            "cd ${BRIDGE_DIR} && ${PYTHON} nerve_bridge.py ${CAMERA_ARGS} &" \
+            >> "$LOG_DIR/bridge.log" 2>&1
+        if check_kinect; then
+            KINECT_ARGS="--device auto --host ${BRIDGE_HOST} --depth-port ${DEPTH_PORT} --skel-port ${SKEL_PORT}"
+            su -l "$WEIRDOS_USER" -c \
+                "cd ${BRIDGE_DIR} && ${PYTHON} kinect_bridge.py ${KINECT_ARGS} &" \
+                >> "$LOG_DIR/kinect.log" 2>&1
+        fi
+        echo "[weirdos] Bridges restarted"
+        ;;
+
+
+    # ────────────────────────────────────────────────────────
     status)
-        echo "═══ WeirdOS Status ═══"
-        echo -n "VCV Rack:  "; pgrep -x Rack > /dev/null && echo "RUNNING" || echo "STOPPED"
-        echo -n "Bridge:    "; pgrep -f "bridge.py" > /dev/null && echo "RUNNING" || echo "STOPPED"
-        echo -n "JACK:      "; pgrep -x jackd > /dev/null && echo "RUNNING" || echo "STOPPED"
-        echo -n "Weston:    "; pgrep -x weston > /dev/null && echo "RUNNING" || echo "STOPPED"
-        echo -n "Camera:    "; [ -e "${CAMERA_DEVICE:-/dev/video0}" ] && echo "DETECTED" || echo "NOT FOUND"
+        echo "═══ WeirdOS v0.2.0 Status ═══"
+        echo -n "VCV Rack:      "; pgrep -f "Rack"            > /dev/null && echo "RUNNING" || echo "STOPPED"
+        echo -n "Face Bridge:   "; pgrep -f "nerve_bridge"    > /dev/null && echo "RUNNING" || echo "STOPPED"
+        echo -n "Depth Bridge:  "; pgrep -f "kinect_bridge"   > /dev/null && echo "RUNNING" || echo "STOPPED"
+        echo -n "AI Backend:    "; pgrep -f "llm_server"      > /dev/null && echo "RUNNING (local)" || echo "${AI_BACKEND} (not running)"
+        echo -n "WeirdStudio:   "; pgrep -f "weirdstudio"     > /dev/null && echo "RUNNING" || echo "STOPPED"
+        echo -n "Ideas Daemon:  "; pgrep -f "ideas_daemon"    > /dev/null && echo "RUNNING (API port ${IDEAS_API_PORT:-9010})" || echo "STOPPED"
+        echo -n "JACK:          "; pgrep -x jackd              > /dev/null && echo "RUNNING" || echo "STOPPED"
+        echo -n "Weston:        "; pgrep -x weston             > /dev/null && echo "RUNNING" || echo "STOPPED"
+        echo ""
+        echo -n "Pi Camera:     "; check_pi_camera && echo "DETECTED (IMX708)" || echo "NOT FOUND"
+        echo -n "Kinect:        "; check_kinect && echo "DETECTED" || echo "NOT FOUND"
+        echo ""
+        echo "Camera mode:   ${CAMERA_MODE}"
+        echo "AI backend:    ${AI_BACKEND}"
+        echo "JACK:          ${JACK_SAMPLERATE}Hz / ${JACK_BUFSIZE} frames"
         ;;
 
     *)
-        echo "Usage: $0 {start|stop|restart|status}"
+        echo "Usage: $0 {start|stop|restart|restart-bridge|status}"
         exit 1
         ;;
 esac

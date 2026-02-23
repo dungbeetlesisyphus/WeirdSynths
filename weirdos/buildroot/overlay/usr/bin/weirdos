@@ -1,81 +1,495 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════
 # weirdos — CLI tool for managing the WeirdOS appliance
+# v0.2.0 — Pi Camera Module 3, Kinect depth, AI backend
 # ═══════════════════════════════════════════════════════════
 
-VERSION="0.1.0"
+VERSION="0.2.0"
+WEIRDOS_CONF="/etc/weirdos/weirdos.conf"
+LOG_DIR="/var/log/weirdos"
+BRIDGE_DIR="/home/weird/bridge"
+PYTHON="/usr/bin/python3"
 
+# ── Source configuration ──
+[ -f "$WEIRDOS_CONF" ] && source "$WEIRDOS_CONF"
+
+# ── Defaults ──
+AI_BACKEND="${AI_BACKEND:-local}"
+CAMERA_BACKEND="${CAMERA_BACKEND:-auto}"
+CAMERA_MODE="${CAMERA_MODE:-track120}"
+KINECT_ENABLE="${KINECT_ENABLE:-auto}"
+NERVE_PORT="${NERVE_PORT:-9000}"
+DEPTH_PORT="${DEPTH_PORT:-9005}"
+WEIRDSTUDIO_PORT="${WEIRDSTUDIO_PORT:-80}"
+
+
+# ────────────────────────────────────────────────────────────
+# Helper: detect Pi Camera Module via libcamera
+# ────────────────────────────────────────────────────────────
+check_pi_camera() {
+    if command -v rpicam-hello &>/dev/null; then
+        rpicam-hello --list-cameras 2>/dev/null | grep -q "IMX708" && return 0
+        rpicam-hello --list-cameras 2>/dev/null | grep -q "Available" && return 0
+    fi
+    [ -e /sys/bus/i2c/devices/*/imx708 ] && return 0
+    find /sys/bus/platform -name "imx708" 2>/dev/null | grep -q . && return 0
+    $PYTHON -c "from picamera2 import Picamera2; cams=Picamera2.global_camera_info(); exit(0 if len(cams)>0 else 1)" 2>/dev/null && return 0
+    return 1
+}
+
+
+# ────────────────────────────────────────────────────────────
+# Helper: detect Kinect device via USB
+# ────────────────────────────────────────────────────────────
+check_kinect() {
+    if command -v lsusb &>/dev/null; then
+        lsusb 2>/dev/null | grep -qi "045e:0" && return 0
+    fi
+    ls /sys/bus/usb/devices/*/idVendor 2>/dev/null | xargs grep -l "045e" 2>/dev/null | grep -q . && return 0
+    return 1
+}
+
+
+# ────────────────────────────────────────────────────────────
+# Helper: identify which Kinect generation is connected
+# ────────────────────────────────────────────────────────────
+kinect_model() {
+    if command -v lsusb &>/dev/null; then
+        local usb
+        usb=$(lsusb 2>/dev/null)
+        # Azure Kinect DK
+        echo "$usb" | grep -qi "045e:097[cd]" && echo "Azure Kinect DK" && return
+        # Kinect One (v2)
+        echo "$usb" | grep -qi "045e:02c4\|045e:02c3\|045e:02bb" && echo "Kinect One (v2)" && return
+        # Kinect 360 (v1)
+        echo "$usb" | grep -qi "045e:02ae\|045e:02a8\|045e:02b0" && echo "Kinect 360 (v1)" && return
+        # Generic Microsoft USB
+        echo "$usb" | grep -qi "045e:" && echo "Kinect (unidentified)" && return
+    fi
+    echo "Unknown"
+}
+
+
+# ────────────────────────────────────────────────────────────
+# Helper: set a config value in weirdos.conf (in-place)
+# Usage: set_conf KEY "VALUE"
+# ────────────────────────────────────────────────────────────
+set_conf() {
+    local key="$1"
+    local value="$2"
+    if grep -q "^${key}=" "$WEIRDOS_CONF" 2>/dev/null; then
+        sed -i "s|^${key}=.*|${key}=\"${value}\"|" "$WEIRDOS_CONF"
+    else
+        echo "${key}=\"${value}\"" >> "$WEIRDOS_CONF"
+    fi
+}
+
+
+# ════════════════════════════════════════════════════════════
+# COMMAND DISPATCH
+# ════════════════════════════════════════════════════════════
 case "$1" in
+
+    # ── Service commands ─────────────────────────────────────
     status)
         /etc/init.d/S99weirdos status
         ;;
+
     start)
         /etc/init.d/S99weirdos start
         ;;
+
     stop)
         /etc/init.d/S99weirdos stop
         ;;
+
     restart)
         /etc/init.d/S99weirdos restart
         ;;
-    config)
-        ${EDITOR:-nano} /etc/weirdos/weirdos.conf
-        echo "Configuration updated. Run 'weirdos restart' to apply changes."
+
+    restart-bridge)
+        /etc/init.d/S99weirdos restart-bridge
         ;;
+
+
+    # ── Config editor ────────────────────────────────────────
+    config)
+        ${EDITOR:-nano} "$WEIRDOS_CONF"
+        echo "Configuration updated. Run 'weirdos restart' to apply."
+        ;;
+
+
+    # ── Logs ─────────────────────────────────────────────────
     log|logs)
         if [ -n "$2" ]; then
-            cat "/var/log/weirdos/$2.log" 2>/dev/null || echo "No log: $2"
+            local_log="$LOG_DIR/$2.log"
+            if [ -f "$local_log" ]; then
+                # Follow with -f if 'follow' flag given, else last 50 lines
+                if [ "$3" = "-f" ] || [ "$3" = "--follow" ]; then
+                    tail -f "$local_log"
+                else
+                    tail -n 50 "$local_log"
+                fi
+            else
+                echo "No log found: $2"
+                echo "Available: $(ls $LOG_DIR 2>/dev/null | sed 's/\.log//g' | tr '\n' ' ')"
+            fi
         else
             echo "═══ Available logs ═══"
-            ls /var/log/weirdos/ 2>/dev/null || echo "No logs yet"
+            ls "$LOG_DIR/" 2>/dev/null || echo "No logs yet (services haven't started)"
             echo ""
-            echo "Usage: weirdos log [jack|bridge|vcvrack|weston]"
+            echo "Usage: weirdos log <name> [-f]"
+            echo "       bridge | kinect | jack | vcvrack | weston | llm | weirdstudio"
         fi
         ;;
+
+
+    # ── Camera info & control ────────────────────────────────
     camera)
-        echo "═══ Camera Info ═══"
-        if [ -e /dev/video0 ]; then
-            v4l2-ctl --device=/dev/video0 --all 2>/dev/null | head -20
+        echo "╔══════════════════════════════════════╗"
+        echo "║   WeirdOS — Camera Info               ║"
+        echo "╚══════════════════════════════════════╝"
+        echo ""
+        echo "Config:  CAMERA_BACKEND=${CAMERA_BACKEND}  MODE=${CAMERA_MODE}  AUTOFOCUS=${CAMERA_AUTOFOCUS:-yes}"
+        echo ""
+
+        # Pi Camera Module check
+        echo "── Pi Camera Module (libcamera) ─────────"
+        if command -v rpicam-hello &>/dev/null; then
+            rpicam-hello --list-cameras 2>/dev/null
+        elif command -v libcamera-hello &>/dev/null; then
+            libcamera-hello --list-cameras 2>/dev/null
         else
-            echo "No camera detected at /dev/video0"
-            echo "Available video devices:"
-            ls /dev/video* 2>/dev/null || echo "  (none)"
+            echo "  libcamera not installed"
+        fi
+
+        # picamera2 info
+        echo ""
+        echo "── picamera2 Python library ─────────────"
+        $PYTHON -c "
+from picamera2 import Picamera2
+cams = Picamera2.global_camera_info()
+if cams:
+    for i, c in enumerate(cams):
+        print(f'  Camera {i}: {c}')
+else:
+    print('  No Pi Camera detected')
+" 2>/dev/null || echo "  picamera2 not installed"
+
+        # V4L2 devices (USB cameras)
+        echo ""
+        echo "── V4L2 / USB cameras ───────────────────"
+        if ls /dev/video* 2>/dev/null | grep -q .; then
+            for dev in /dev/video*; do
+                desc=$(v4l2-ctl --device="$dev" --info 2>/dev/null | grep "Card type" | sed 's/.*: //')
+                echo "  $dev: ${desc:-(no description)}"
+            done
+        else
+            echo "  No V4L2 devices found"
+        fi
+
+        echo ""
+        echo "── Bridge status ────────────────────────"
+        if pgrep -f "nerve_bridge" > /dev/null; then
+            echo "  Face bridge: RUNNING (port ${NERVE_PORT})"
+        else
+            echo "  Face bridge: STOPPED"
         fi
         ;;
+
+
+    # ── Camera mode quick-set ────────────────────────────────
+    camera-mode)
+        VALID_MODES="track120 track60 hdr full"
+        NEW_MODE="$2"
+
+        if [ -z "$NEW_MODE" ]; then
+            echo "Current mode: ${CAMERA_MODE}"
+            echo ""
+            echo "Available modes:"
+            echo "  track120  — 1536×864 @ 120fps  (recommended, fastest tracking)"
+            echo "  track60   — 2304×1296 @ 56fps  (higher res, still fast)"
+            echo "  hdr       — 2304×1296 @ 30fps  (HDR mode for stage lighting)"
+            echo "  full      — 4608×2592 @ 14fps  (full 12MP, not for tracking)"
+            echo ""
+            echo "Usage: weirdos camera-mode <mode>"
+            exit 0
+        fi
+
+        # Validate
+        if ! echo "$VALID_MODES" | grep -qw "$NEW_MODE"; then
+            echo "Error: Unknown mode '${NEW_MODE}'"
+            echo "Valid modes: ${VALID_MODES}"
+            exit 1
+        fi
+
+        set_conf "CAMERA_MODE" "$NEW_MODE"
+        echo "Camera mode set to '${NEW_MODE}'"
+        echo "Restarting face tracking bridge..."
+        /etc/init.d/S99weirdos restart-bridge
+        ;;
+
+
+    # ── Kinect depth status ──────────────────────────────────
+    kinect)
+        echo "╔══════════════════════════════════════╗"
+        echo "║   WeirdOS — Kinect Depth Tracking     ║"
+        echo "╚══════════════════════════════════════╝"
+        echo ""
+        echo "Config:  KINECT_ENABLE=${KINECT_ENABLE}  NEAR=${KINECT_NEAR_M}m  FAR=${KINECT_FAR_M}m"
+        echo ""
+
+        echo "── Hardware detection ───────────────────"
+        if check_kinect; then
+            model=$(kinect_model)
+            echo "  ✓ Connected: ${model}"
+        else
+            echo "  No Kinect device found"
+            echo ""
+            echo "  Supported hardware:"
+            echo "    • Microsoft Kinect 360 (v1)  — USB 2.0, structured light, 640×480"
+            echo "    • Microsoft Kinect One (v2)  — USB 3.0, ToF, 512×424"
+            echo "    • Microsoft Azure Kinect DK  — USB 3.1, ToF 512×512, body tracking"
+        fi
+
+        echo ""
+        echo "── Bridge status ────────────────────────"
+        if pgrep -f "kinect_bridge" > /dev/null; then
+            echo "  Kinect bridge: RUNNING (depth:${DEPTH_PORT})"
+        else
+            echo "  Kinect bridge: STOPPED"
+        fi
+
+        echo ""
+        echo "── Python backends ──────────────────────"
+        $PYTHON -c "import freenect; print('  freenect (Kinect 360):  INSTALLED')" 2>/dev/null || echo "  freenect (Kinect 360):  not installed"
+        $PYTHON -c "import pylibfreenect2; print('  pylibfreenect2 (v2):    INSTALLED')" 2>/dev/null || echo "  pylibfreenect2 (KOne):  not installed"
+        $PYTHON -c "import pyk4a; print('  pyk4a (Azure):          INSTALLED')" 2>/dev/null || echo "  pyk4a (Azure):          not installed"
+        ;;
+
+
+    # ── AI backend config ────────────────────────────────────
+    ai)
+        echo "╔══════════════════════════════════════╗"
+        echo "║   WeirdOS — AI Backend                ║"
+        echo "╚══════════════════════════════════════╝"
+        echo ""
+        echo "Current backend: ${AI_BACKEND}"
+        echo ""
+        echo "  local   — Qwen2.5-Coder on Hailo-10H (offline, private)"
+        echo "  cloud   — Claude API (requires API key + internet)"
+        echo "  hybrid  — local for quick tasks, cloud for complex"
+        echo "  none    — disable WeirdMaker AI"
+        echo ""
+        if [ -n "$2" ]; then
+            case "$2" in
+                local|cloud|hybrid|none)
+                    set_conf "AI_BACKEND" "$2"
+                    echo "AI backend set to '${2}'"
+                    echo "Run 'weirdos restart' to apply."
+                    ;;
+                *)
+                    echo "Unknown backend: ${2}"
+                    echo "Valid: local | cloud | hybrid | none"
+                    exit 1
+                    ;;
+            esac
+        fi
+        ;;
+
+
+    # ── Secure API key entry ─────────────────────────────────
+    ai-setup)
+        echo "╔══════════════════════════════════════╗"
+        echo "║   WeirdOS — AI API Key Setup          ║"
+        echo "╚══════════════════════════════════════╝"
+        echo ""
+        echo "This stores your Claude API key in the system keyring."
+        echo "The key is NOT stored in weirdos.conf (plaintext)."
+        echo ""
+
+        # Try secret-tool (GNOME keyring / libsecret) — preferred
+        if command -v secret-tool &>/dev/null; then
+            echo "Enter your Claude API key (input hidden):"
+            read -s -p "API Key: " api_key
+            echo ""
+            if [ -z "$api_key" ]; then
+                echo "Aborted — no key entered."
+                exit 1
+            fi
+            echo -n "$api_key" | secret-tool store \
+                --label="WeirdOS Claude API Key" \
+                service weirdos \
+                username claude_api_key
+            echo "✓ API key stored in keyring"
+
+        # Fallback: encrypted file with per-machine key derived from machine-id
+        else
+            echo "Note: system keyring not available. Using encrypted local file."
+            echo ""
+            echo "Enter your Claude API key (input hidden):"
+            read -s -p "API Key: " api_key
+            echo ""
+            if [ -z "$api_key" ]; then
+                echo "Aborted — no key entered."
+                exit 1
+            fi
+
+            MACHINE_ID=$(cat /etc/machine-id 2>/dev/null || echo "weirdos-default")
+            KEY_FILE="/etc/weirdos/.api_key.enc"
+            echo -n "$api_key" | openssl enc -aes-256-cbc -pbkdf2 \
+                -pass "pass:${MACHINE_ID}" \
+                -out "$KEY_FILE" 2>/dev/null
+            chmod 600 "$KEY_FILE"
+            echo "✓ API key stored encrypted at ${KEY_FILE}"
+        fi
+
+        echo ""
+        # Ensure cloud or hybrid mode is active
+        if [ "$AI_BACKEND" = "local" ] || [ "$AI_BACKEND" = "none" ]; then
+            echo "Tip: Set backend to 'cloud' or 'hybrid' to use this key:"
+            echo "     weirdos ai cloud"
+        fi
+        ;;
+
+
+    # ── Audio info ───────────────────────────────────────────
     audio)
-        echo "═══ Audio Info ═══"
-        echo "ALSA devices:"
+        echo "╔══════════════════════════════════════╗"
+        echo "║   WeirdOS — Audio Info                ║"
+        echo "╚══════════════════════════════════════╝"
+        echo ""
+        echo "Config:  ${AUDIO_DEVICE:-hw:0} @ ${JACK_SAMPLERATE:-48000}Hz / ${JACK_BUFSIZE:-256} frames"
+        echo ""
+        echo "── ALSA devices ─────────────────────────"
         aplay -l 2>/dev/null | grep "^card" || echo "  (none)"
         echo ""
-        echo "JACK status:"
-        jack_lsp 2>/dev/null || echo "  JACK not running"
+        echo "── JACK status ──────────────────────────"
+        if pgrep -x jackd > /dev/null; then
+            echo "  JACK running"
+            jack_lsp 2>/dev/null | head -20
+        else
+            echo "  JACK not running"
+        fi
         ;;
+
+
+    # ── Version ──────────────────────────────────────────────
     version)
         echo "WeirdOS v${VERSION}"
-        echo "VCV Rack: $(vcvrack --version 2>/dev/null || echo 'not installed')"
-        echo "Bridge:   $(python3 -c 'import bridge; print(bridge.__version__)' 2>/dev/null || echo '2.0.0')"
-        echo "Kernel:   $(uname -r)"
-        echo "Platform: $(uname -m)"
+        echo ""
+        echo "VCV Rack:    $(vcvrack --version 2>/dev/null || echo 'not found')"
+        echo "Kernel:      $(uname -r)"
+        echo "Platform:    $(uname -m)"
+        echo "Hostname:    $(hostname)"
+        echo ""
+        echo "── Camera ───────────────────────────────"
+        if check_pi_camera; then
+            echo "  Pi Camera Module 3 (IMX708)  ✓"
+        else
+            echo "  Pi Camera:  not detected"
+        fi
+        if ls /dev/video* 2>/dev/null | grep -q .; then
+            echo "  V4L2 devices: $(ls /dev/video* 2>/dev/null | tr '\n' ' ')"
+        fi
+        echo ""
+        echo "── Kinect ───────────────────────────────"
+        if check_kinect; then
+            echo "  $(kinect_model)  ✓"
+        else
+            echo "  No Kinect connected"
+        fi
+        echo ""
+        echo "── Python bridges ───────────────────────"
+        $PYTHON -c "import mediapipe; print('  mediapipe:        OK')" 2>/dev/null || echo "  mediapipe:        missing"
+        $PYTHON -c "import picamera2; print('  picamera2:        OK')" 2>/dev/null || echo "  picamera2:        missing (Pi Camera won't work)"
+        $PYTHON -c "import cv2; print('  opencv-python:    OK')" 2>/dev/null || echo "  opencv-python:    missing"
+        $PYTHON -c "import freenect; print('  freenect:         OK')" 2>/dev/null || echo "  freenect:         not installed"
+        $PYTHON -c "import pyk4a; print('  pyk4a (Azure):    OK')" 2>/dev/null || echo "  pyk4a:            not installed"
         ;;
+
+
+    # ── Ideas system ─────────────────────────────────────────
+    ideas)
+        case "$2" in
+            status)
+                echo "═══ WeirdOS Ideas Generator ═══"
+                if pgrep -f "ideas_daemon" > /dev/null; then
+                    echo "  Daemon:  RUNNING"
+                    echo "  Schedule: daily @ ${IDEAS_TIME:-06:00}"
+                    echo "  Storage: ${IDEAS_STORAGE_PATH:-/home/weird/ideas}"
+                else
+                    echo "  Daemon:  STOPPED"
+                    echo "  Run: weirdos ideas start"
+                fi
+                ;;
+            start)
+                echo "Starting WeirdOS Ideas Generator daemon..."
+                su -l weird -c \
+                    "cd /home/weird && python3 /home/weird/bridge/ideas_daemon.py &" \
+                    >> "$LOG_DIR/ideas.log" 2>&1
+                echo "✓ Ideas daemon started"
+                ;;
+            stop)
+                killall -SIGTERM -f "ideas_daemon.py" 2>/dev/null
+                echo "Ideas daemon stopped"
+                ;;
+            pending)
+                ls -1 "${IDEAS_STORAGE_PATH:-/home/weird/ideas}/pending/" 2>/dev/null || echo "No pending ideas"
+                ;;
+            *)
+                echo "Usage: weirdos ideas <status|start|stop|pending>"
+                ;;
+        esac
+        ;;
+
+
+    # ── Help ─────────────────────────────────────────────────
     help|--help|-h)
-        echo "WeirdOS v${VERSION} — Face tracking modular synth appliance"
+        echo "WeirdOS v${VERSION} — Weird face-tracking modular synth appliance"
         echo ""
-        echo "Usage: weirdos <command>"
+        echo "Usage: weirdos <command> [options]"
         echo ""
-        echo "Commands:"
-        echo "  status    Show status of all services"
-        echo "  start     Start VCV Rack + bridge"
-        echo "  stop      Stop all services"
-        echo "  restart   Restart everything"
-        echo "  config    Edit system configuration"
-        echo "  log       View service logs"
-        echo "  camera    Show camera information"
-        echo "  audio     Show audio device info"
-        echo "  version   Show version info"
-        echo "  help      Show this help"
+        echo "Service control:"
+        echo "  status           Show status of all services"
+        echo "  start            Start VCV Rack + all bridges"
+        echo "  stop             Stop all services"
+        echo "  restart          Restart everything"
+        echo "  restart-bridge   Restart only Python bridges (not JACK/Rack)"
+        echo ""
+        echo "Configuration:"
+        echo "  config           Open weirdos.conf in editor"
+        echo "  log [name] [-f]  View logs (bridge/kinect/jack/vcvrack/weston/llm)"
+        echo ""
+        echo "Camera:"
+        echo "  camera           Show camera info (Pi Camera + V4L2 + bridge)"
+        echo "  camera-mode      Show/set camera mode (track120/track60/hdr/full)"
+        echo ""
+        echo "Depth tracking:"
+        echo "  kinect           Show Kinect device info and bridge status"
+        echo ""
+        echo "AI backend:"
+        echo "  ai [backend]     Show/set AI backend (local/cloud/hybrid/none)"
+        echo "  ai-setup         Securely store Claude API key in keyring"
+        echo ""
+        echo "Audio:"
+        echo "  audio            Show ALSA devices and JACK status"
+        echo ""
+        echo "Ideas:"
+        echo "  ideas status     Show ideas generator daemon status"
+        echo "  ideas start      Start ideas daemon"
+        echo "  ideas pending    List pending ideas awaiting approval"
+        echo ""
+        echo "Info:"
+        echo "  version          Show version and dependency status"
+        echo "  help             Show this help"
         ;;
+
     *)
         echo "WeirdOS v${VERSION}"
         echo "Run 'weirdos help' for usage info"
         ;;
+
 esac
+
+exit 0

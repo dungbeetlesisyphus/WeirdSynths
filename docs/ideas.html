@@ -610,6 +610,21 @@
     <a href="../ecosystem/index.html">Ecosystem</a>
 </nav>
 
+<!-- TAB BAR -->
+<div style="padding: 0 2rem; position:relative; z-index:10;">
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tabBtn-feed" onclick="switchTab('feed')">
+      MODULE IDEAS FEED
+    </button>
+    <button class="tab-btn" id="tabBtn-pending" onclick="switchTab('pending')">
+      DAILY PENDING
+      <span class="pending-badge" id="pending-badge"></span>
+    </button>
+  </div>
+</div>
+
+<!-- TAB: FEED (existing content) -->
+<div class="main-tab active" id="tab-feed">
 <div class="main">
 
   <!-- LEFT SIDEBAR -->
@@ -736,6 +751,37 @@
   </aside>
 
 </div>
+</div><!-- /tab-feed -->
+
+<!-- TAB: PENDING APPROVAL QUEUE -->
+<div class="main-tab" id="tab-pending">
+  <div class="pending-panel-inner" style="padding: 0 2rem;">
+    <div class="pending-header">
+      <div>
+        <div style="font-family:'Orbitron',monospace;font-size:1rem;letter-spacing:0.12em;color:var(--phosphor)">
+          DAILY IDEAS — PENDING APPROVAL
+        </div>
+        <div style="font-size:0.75rem;color:var(--phosphor-dim);margin-top:0.3rem">
+          <span id="pending-count">0</span> ideas awaiting your decision
+        </div>
+      </div>
+      <button onclick="fetchPending()" style="background:transparent;border:1px solid var(--phosphor-dim);color:var(--phosphor-dim);font-family:'Share Tech Mono',monospace;font-size:0.75rem;padding:0.3rem 0.8rem;cursor:pointer;letter-spacing:0.1em;">
+        ↺ REFRESH
+      </button>
+    </div>
+
+    <div class="pref-summary-box">
+      <span>AI PREFERENCE MODEL</span>
+      <span id="pref-summary">Loading preferences...</span>
+    </div>
+
+    <div id="pending-list">
+      <div style="color:var(--phosphor-dim);padding:2rem;text-align:center">
+        Loading today's ideas...
+      </div>
+    </div>
+  </div>
+</div><!-- /tab-pending -->
 
 <div class="toast" id="toast"></div>
 
@@ -1077,7 +1123,441 @@ function init() {
 }
 
 loadIdeas();
+
+
+// ══════════════════════════════════════════════════════════════════════
+// PENDING APPROVAL QUEUE
+// Connects to ideas_daemon.py approval API at localhost:9010
+// ══════════════════════════════════════════════════════════════════════
+
+const API_BASE = 'http://127.0.0.1:9010';
+let pendingIdeas  = [];
+let prefSummary   = '';
+
+async function fetchPending() {
+  const panel = document.getElementById('pending-panel');
+  if (!panel) return;
+  try {
+    const resp = await fetch(`${API_BASE}/pending`, { signal: AbortSignal.timeout(3000) });
+    const data = await resp.json();
+    pendingIdeas = data.pending || [];
+    renderPendingPanel();
+  } catch (e) {
+    document.getElementById('pending-list').innerHTML =
+      `<div style="color:var(--phosphor-dim);padding:2rem;text-align:center">
+        Ideas daemon not running.<br>
+        <span style="font-size:0.8em;opacity:0.6">Start with: weirdos ideas start</span>
+      </div>`;
+  }
+}
+
+async function fetchPreferences() {
+  try {
+    const resp = await fetch(`${API_BASE}/preferences`, { signal: AbortSignal.timeout(3000) });
+    const data = await resp.json();
+    prefSummary = data.summary || '';
+    const el = document.getElementById('pref-summary');
+    if (el) el.textContent = prefSummary;
+  } catch (e) { /* daemon not running */ }
+}
+
+function renderPendingPanel() {
+  const list = document.getElementById('pending-list');
+  if (!list) return;
+
+  if (pendingIdeas.length === 0) {
+    list.innerHTML = `<div style="color:var(--phosphor-dim);padding:2rem;text-align:center">
+      No pending ideas today.<br>
+      <span style="font-size:0.8em;opacity:0.6">New batch arrives at 06:00 · Run: weirdos ideas start</span>
+    </div>`;
+    return;
+  }
+
+  document.getElementById('pending-count').textContent = pendingIdeas.length;
+
+  list.innerHTML = pendingIdeas.map(idea => `
+    <div class="pending-card" id="pcard-${idea.id}">
+      <div class="pcard-header">
+        <span class="pcard-name">${idea.name}</span>
+        <span class="pcard-tag">${idea.category} · ${idea.hp}HP · ${idea.bodyPart}</span>
+      </div>
+      <div class="pcard-tagline">"${idea.tagline}"</div>
+      <div class="pcard-concept">${idea.concept}</div>
+      <div class="pcard-key">★ ${idea.keyFeature}</div>
+      <div class="pcard-ports">
+        <span class="port-group">IN: ${(idea.inputs||[]).join(' · ')}</span>
+        <span class="port-group">OUT: ${(idea.outputs||[]).join(' · ')}</span>
+        <span class="port-group">PARAMS: ${(idea.params||[]).join(' · ')}</span>
+      </div>
+      <div class="pcard-insp">Inspired by: ${idea.inspiration}</div>
+      <div class="pcard-actions">
+        <div class="star-row" id="stars-${idea.id}">
+          ${[1,2,3,4,5].map(n => `<span class="star" onclick="setStar('${idea.id}',${n})" data-n="${n}">☆</span>`).join('')}
+        </div>
+        <textarea class="critique-box" id="critique-${idea.id}"
+          placeholder="Critique or notes (optional)..." rows="2"></textarea>
+        <div class="action-btns">
+          <button class="btn-approve" onclick="approveIdea('${idea.id}')">✓ APPROVE</button>
+          <button class="btn-revise"  onclick="requestChanges('${idea.id}')">↩ REVISE</button>
+          <button class="btn-reject"  onclick="rejectIdea('${idea.id}')">✕ REJECT</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+const pendingStars = {};
+
+function setStar(id, n) {
+  pendingStars[id] = n;
+  const row = document.getElementById(`stars-${id}`);
+  if (!row) return;
+  row.querySelectorAll('.star').forEach(s => {
+    s.textContent = parseInt(s.dataset.n) <= n ? '★' : '☆';
+    s.style.color  = parseInt(s.dataset.n) <= n ? 'var(--amber)' : 'var(--phosphor-dim)';
+  });
+}
+
+async function approveIdea(id) {
+  const critique = document.getElementById(`critique-${id}`)?.value || '';
+  try {
+    const resp = await fetch(`${API_BASE}/approve/${id}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ critique }),
+    });
+    const data = await resp.json();
+    if (data.ok) {
+      removePendingCard(id);
+      showToast(`✓ ${data.idea} approved!`);
+    }
+  } catch (e) { showToast('API error', 'red'); }
+}
+
+async function rejectIdea(id) {
+  const reason = document.getElementById(`critique-${id}`)?.value || '';
+  try {
+    const resp = await fetch(`${API_BASE}/reject/${id}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason }),
+    });
+    const data = await resp.json();
+    if (data.ok) {
+      removePendingCard(id, 'red');
+      showToast(`✕ ${data.idea} rejected`, 'red');
+    }
+  } catch (e) { showToast('API error', 'red'); }
+}
+
+async function requestChanges(id) {
+  const notes = document.getElementById(`critique-${id}`)?.value || '';
+  if (!notes.trim()) {
+    showToast('Add revision notes first', 'amber'); return;
+  }
+  try {
+    const resp = await fetch(`${API_BASE}/request-changes/${id}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ notes }),
+    });
+    const data = await resp.json();
+    if (data.ok) {
+      removePendingCard(id, 'amber');
+      showToast(`↩ Revision requested for ${data.idea}`, 'amber');
+    }
+  } catch (e) { showToast('API error', 'red'); }
+}
+
+async function rateAndAdvance(id) {
+  const stars = pendingStars[id];
+  if (!stars) { showToast('Set a star rating first', 'amber'); return; }
+  const critique = document.getElementById(`critique-${id}`)?.value || '';
+  try {
+    const resp = await fetch(`${API_BASE}/rate/${id}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rating: stars, critique }),
+    });
+    const data = await resp.json();
+    if (data.ok) {
+      const cls = data.status === 'approved' ? '' : 'red';
+      removePendingCard(id, cls);
+      showToast(`${data.status === 'approved' ? '✓' : '✕'} ${data.idea} (${stars}★)`, cls);
+    }
+  } catch (e) { showToast('API error', 'red'); }
+}
+
+function removePendingCard(id, flashClass = '') {
+  const card = document.getElementById(`pcard-${id}`);
+  if (card) {
+    if (flashClass) card.style.borderColor = flashClass === 'red' ? 'var(--red)' : flashClass === 'amber' ? 'var(--amber)' : 'var(--phosphor)';
+    card.style.transition = 'all 0.4s';
+    card.style.opacity = '0';
+    card.style.transform = 'translateX(40px)';
+    setTimeout(() => card.remove(), 400);
+  }
+  pendingIdeas = pendingIdeas.filter(i => i.id !== id);
+  const counter = document.getElementById('pending-count');
+  if (counter) counter.textContent = pendingIdeas.length;
+  if (pendingIdeas.length === 0) {
+    setTimeout(() => {
+      const list = document.getElementById('pending-list');
+      if (list) list.innerHTML = `<div style="color:var(--phosphor-dim);padding:2rem;text-align:center">
+        All done! Ideas have been processed.<br>
+        <span style="font-size:0.8em;opacity:0.6">The AI will learn from your choices.</span>
+      </div>`;
+    }, 500);
+  }
+}
+
+// ── TAB SWITCHING ──────────────────────────────────────────────────────
+function switchTab(tabName) {
+  document.querySelectorAll('.main-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  const panel = document.getElementById(`tab-${tabName}`);
+  const btn   = document.getElementById(`tabBtn-${tabName}`);
+  if (panel) panel.classList.add('active');
+  if (btn)   btn.classList.add('active');
+  if (tabName === 'pending') {
+    fetchPending();
+    fetchPreferences();
+  }
+}
+
+// Auto-poll pending count every 30s for badge update
+setInterval(async () => {
+  try {
+    const resp = await fetch(`${API_BASE}/pending`, { signal: AbortSignal.timeout(2000) });
+    const data = await resp.json();
+    const badge = document.getElementById('pending-badge');
+    if (badge) {
+      badge.textContent = data.count || '';
+      badge.style.display = data.count > 0 ? 'inline' : 'none';
+    }
+  } catch (e) { /* silently fail */ }
+}, 30000);
 </script>
+
+<style>
+/* ── Pending Panel Styles ─────────────────────────────────── */
+.tab-bar {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--phosphor-dim);
+  margin-bottom: 1.5rem;
+  position: relative;
+  z-index: 10;
+}
+
+.tab-btn {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--phosphor-dim);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.85rem;
+  letter-spacing: 0.12em;
+  padding: 0.6rem 1.4rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.tab-btn.active {
+  color: var(--phosphor);
+  border-bottom-color: var(--phosphor);
+}
+
+.tab-btn:hover { color: var(--phosphor); }
+
+.pending-badge {
+  display: none;
+  background: var(--amber);
+  color: #000;
+  font-size: 0.65rem;
+  border-radius: 999px;
+  padding: 1px 5px;
+  margin-left: 5px;
+  vertical-align: middle;
+  font-weight: bold;
+}
+
+.main-tab { display: none; }
+.main-tab.active { display: block; }
+
+.pending-panel-inner {
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.pending-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.pref-summary-box {
+  background: rgba(0,255,136,0.04);
+  border: 1px solid var(--phosphor-dim);
+  border-left: 3px solid var(--amber);
+  padding: 0.8rem 1rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.82rem;
+  color: var(--amber);
+  opacity: 0.9;
+}
+
+.pref-summary-box span {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--phosphor-dim);
+  margin-bottom: 0.3rem;
+  letter-spacing: 0.1em;
+}
+
+.pending-card {
+  background: var(--bg-panel);
+  border: 1px solid rgba(0,255,136,0.15);
+  border-left: 3px solid var(--phosphor-dim);
+  padding: 1.2rem;
+  margin-bottom: 1rem;
+  transition: border-color 0.3s;
+}
+
+.pending-card:hover { border-left-color: var(--phosphor); }
+
+.pcard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.4rem;
+}
+
+.pcard-name {
+  font-family: 'Orbitron', monospace;
+  font-size: 1.1rem;
+  color: var(--phosphor);
+  letter-spacing: 0.1em;
+}
+
+.pcard-tag {
+  font-size: 0.72rem;
+  color: var(--phosphor-dim);
+  letter-spacing: 0.08em;
+}
+
+.pcard-tagline {
+  font-style: italic;
+  color: var(--amber);
+  font-size: 0.85rem;
+  margin-bottom: 0.6rem;
+  opacity: 0.85;
+}
+
+.pcard-concept {
+  color: var(--phosphor);
+  font-size: 0.82rem;
+  line-height: 1.6;
+  margin-bottom: 0.6rem;
+  opacity: 0.9;
+}
+
+.pcard-key {
+  color: var(--blue);
+  font-size: 0.8rem;
+  margin-bottom: 0.6rem;
+  opacity: 0.9;
+}
+
+.pcard-ports {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  font-size: 0.7rem;
+  color: var(--phosphor-dim);
+  margin-bottom: 0.5rem;
+}
+
+.pcard-insp {
+  font-size: 0.72rem;
+  color: var(--phosphor-dim);
+  opacity: 0.7;
+  margin-bottom: 0.8rem;
+}
+
+.pcard-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.star-row {
+  display: flex;
+  gap: 0.3rem;
+  margin-bottom: 0.2rem;
+}
+
+.star {
+  font-size: 1.3rem;
+  cursor: pointer;
+  color: var(--phosphor-dim);
+  transition: color 0.15s, transform 0.1s;
+  user-select: none;
+}
+
+.star:hover { transform: scale(1.2); color: var(--amber); }
+
+.critique-box {
+  background: rgba(0,255,136,0.03);
+  border: 1px solid rgba(0,255,136,0.15);
+  color: var(--phosphor);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.78rem;
+  padding: 0.5rem;
+  width: 100%;
+  resize: vertical;
+  outline: none;
+}
+
+.critique-box:focus { border-color: var(--phosphor-dim); }
+
+.action-btns {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.btn-approve, .btn-revise, .btn-reject {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  padding: 0.4rem 1rem;
+  border: 1px solid;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: transparent;
+}
+
+.btn-approve {
+  border-color: var(--phosphor-dim);
+  color: var(--phosphor);
+}
+.btn-approve:hover { background: var(--phosphor); color: #000; }
+
+.btn-revise {
+  border-color: var(--amber-dim);
+  color: var(--amber);
+}
+.btn-revise:hover { background: var(--amber); color: #000; }
+
+.btn-reject {
+  border-color: rgba(255,51,68,0.4);
+  color: var(--red);
+}
+.btn-reject:hover { background: var(--red); color: #000; }
+</style>
 
 </body>
 </html>

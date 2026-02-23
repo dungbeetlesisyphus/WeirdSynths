@@ -1,15 +1,30 @@
 #!/usr/bin/env python3
 """
 NERVE Bridge — Face Tracking to VCV Rack UDP
-Captures webcam via MediaPipe FaceLandmarker (Tasks API), extracts 17
-facial features from blendshapes + landmarks, sends binary UDP packets
-to NERVE module on localhost:9000.
+Captures from Pi Camera Module 3 (picamera2/libcamera) or USB webcam (OpenCV),
+runs MediaPipe FaceLandmarker, extracts 21 facial features, sends binary UDP
+packets to NERVE/SKULL/MIRROR modules.
+
+Camera auto-detection (priority):
+  1. Raspberry Pi Camera Module (picamera2) — 120fps @ 1536×864, PDAF autofocus
+  2. USB webcam / V4L2 (opencv-python) — fallback for non-Pi development
 
 Usage:
-    pip install mediapipe opencv-python
-    python nerve_bridge.py [--port 9000] [--port 9001] [--port 9002] [--camera 0] [--show]
+    # On WeirdBox (Pi Camera auto-detected):
+    python nerve_bridge.py [--show]
 
-Sends to all specified ports simultaneously (default: 9000 for NERVE, 9001 for SKULL, 9002 for MIRROR).
+    # Force specific camera mode (Pi Camera only):
+    python nerve_bridge.py --camera-mode track120  # 120fps (default)
+    python nerve_bridge.py --camera-mode track60   # 56fps, higher res
+    python nerve_bridge.py --camera-mode hdr       # HDR, stage lighting
+
+    # Force USB webcam:
+    python nerve_bridge.py --camera 0 --no-picamera
+
+    # Custom ports:
+    python nerve_bridge.py --port 9000 9001 9002
+
+Sends to all specified ports simultaneously (default: 9000=NERVE, 9001=SKULL, 9002=MIRROR).
 
 First run downloads the face_landmarker model (~4MB) automatically.
 
@@ -29,9 +44,11 @@ import sys
 import time
 import urllib.request
 
-import cv2
 import mediapipe as mp
 import numpy as np
+
+# ── Camera backend (picamera2 preferred, OpenCV fallback) ──
+from picamera_capture import get_camera, list_modes, MODES
 
 # ── Model download URL ──
 MODEL_URL = "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task"
@@ -333,14 +350,41 @@ def draw_feature_overlay(frame, features, w, h):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='NERVE Bridge — Face to VCV Rack')
+    parser = argparse.ArgumentParser(
+        description='NERVE Bridge — Face tracking to VCV Rack UDP',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=f"""
+Camera modes (Pi Camera Module 3 / IMX708):
+  track120   1536×864  @ 120fps  — fastest (default, recommended)
+  track60    2304×1296 @ 56fps   — higher resolution
+  hdr        2304×1296 @ 30fps   — HDR mode for stage lighting
+  full       4608×2592 @ 14fps   — max resolution
+
+On non-Pi systems, camera-mode is ignored and OpenCV is used.
+""",
+    )
     parser.add_argument('--port', type=int, nargs='+', default=[9000, 9001, 9002],
-                        help='UDP port(s) to send to (default: 9000 9001)')
-    parser.add_argument('--host', type=str, default='127.0.0.1', help='Target host (default: 127.0.0.1)')
-    parser.add_argument('--camera', type=int, default=0, help='Camera index (default: 0)')
-    parser.add_argument('--show', action='store_true', help='Show camera preview window')
-    parser.add_argument('--fps', type=int, default=30, help='Target FPS (default: 30)')
+                        help='UDP port(s) to send to (default: 9000 9001 9002)')
+    parser.add_argument('--host', type=str, default='127.0.0.1',
+                        help='Target host (default: 127.0.0.1)')
+    parser.add_argument('--camera', type=int, default=0,
+                        help='OpenCV fallback camera index (default: 0)')
+    parser.add_argument('--camera-mode', type=str, default='track120',
+                        choices=list(MODES.keys()),
+                        help='Pi Camera mode (default: track120 = 1536×864@120fps)')
+    parser.add_argument('--no-picamera', action='store_true',
+                        help='Force OpenCV backend, skip Pi Camera')
+    parser.add_argument('--no-autofocus', action='store_true',
+                        help='Disable continuous autofocus (Pi Camera)')
+    parser.add_argument('--show', action='store_true',
+                        help='Show camera preview window')
+    parser.add_argument('--list-modes', action='store_true',
+                        help='List Pi Camera modes and exit')
     args = parser.parse_args()
+
+    if args.list_modes:
+        list_modes()
+        sys.exit(0)
 
     # ── Download model if needed ──
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -353,7 +397,24 @@ def main():
     port_str = ', '.join(str(p) for p in ports)
     print(f"NERVE Bridge -> {args.host}:[{port_str}]")
 
-    # ── Setup MediaPipe FaceLandmarker (new Tasks API) ──
+    # ── Setup Camera (Pi Camera preferred, OpenCV fallback) ──
+    cam = get_camera(
+        mode=args.camera_mode,
+        camera_index=args.camera,
+        prefer_picamera=not args.no_picamera,
+        width=640, height=480, fps=30,
+    )
+    if not cam.open():
+        print("ERROR: Could not open any camera.")
+        sys.exit(1)
+
+    w, h = cam.get_size()
+    frame_time = cam.get_frame_time()
+    using_picamera = cam.is_picamera
+
+    print(f"Camera: {w}×{h}")
+
+    # ── Setup MediaPipe FaceLandmarker (Tasks API) ──
     BaseOptions = mp.tasks.BaseOptions
     FaceLandmarker = mp.tasks.vision.FaceLandmarker
     FaceLandmarkerOptions = mp.tasks.vision.FaceLandmarkerOptions
@@ -369,27 +430,20 @@ def main():
         output_face_blendshapes=True,
         output_facial_transformation_matrixes=False,
     )
-
     landmarker = FaceLandmarker.create_from_options(options)
 
-    # ── Setup Camera ──
-    cap = cv2.VideoCapture(args.camera)
-    if not cap.isOpened():
-        print(f"ERROR: Cannot open camera {args.camera}")
-        sys.exit(1)
+    # ── Optional OpenCV preview ──
+    show_cv2 = False
+    if args.show:
+        try:
+            import cv2 as _cv
+            show_cv2 = True
+        except ImportError:
+            print("[Bridge] opencv-python not installed — preview disabled")
 
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-    cap.set(cv2.CAP_PROP_FPS, args.fps)
-
-    w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    print(f"Camera: {w}x{h}")
-
-    frame_time = 1.0 / args.fps
-    frame_count = 0
-    fps_timer = time.time()
-    actual_fps = 0.0
+    frame_count  = 0
+    fps_timer    = time.time()
+    actual_fps   = 0.0
     timestamp_ms = 0
 
     print("Tracking... (Ctrl+C or 'q' to quit)")
@@ -399,40 +453,42 @@ def main():
         while True:
             t0 = time.time()
 
-            ret, frame = cap.read()
-            if not ret:
-                print("Camera read failed")
-                break
+            # ── Capture frame (RGB from both backends) ──
+            ret, frame_rgb = cam.read()
+            if not ret or frame_rgb is None:
+                time.sleep(0.01)
+                continue
 
-            # Flip horizontally for mirror effect
-            frame = cv2.flip(frame, 1)
-
-            # Convert BGR to RGB for MediaPipe
-            rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
-
-            # Detect face landmarks
+            # ── MediaPipe (expects RGB — both backends return RGB) ──
+            mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame_rgb)
             timestamp_ms += int(frame_time * 1000)
             result = landmarker.detect_for_video(mp_image, timestamp_ms)
 
             if result.face_landmarks and result.face_blendshapes:
-                landmarks = result.face_landmarks[0]
+                landmarks  = result.face_landmarks[0]
                 blendshapes = get_blendshape_dict(result.face_blendshapes[0])
-                features = extract_features(blendshapes, landmarks)
+                features   = extract_features(blendshapes, landmarks)
 
-                # Send UDP packet to all targets
+                # ── Send UDP ──
                 packet = pack_nerve_packet(features)
                 for t in targets:
                     sock.sendto(packet, t)
 
-                # Status display
+                # ── Status line ──
                 frame_count += 1
                 now = time.time()
                 if now - fps_timer >= 1.0:
                     actual_fps = frame_count / (now - fps_timer)
                     frame_count = 0
-                    fps_timer = now
-                    print(f"\r  {actual_fps:.0f} fps | "
+                    fps_timer   = now
+
+                    # Extra Pi Camera status (AF state)
+                    cam_status = ""
+                    if using_picamera:
+                        af_state = cam.get_autofocus_state()
+                        cam_status = f" | AF:{af_state}"
+
+                    print(f"\r  {actual_fps:.0f} fps{cam_status} | "
                           f"head({features['headX']:+.2f},{features['headY']:+.2f}) "
                           f"eyes({features['leftEye']:.2f},{features['rightEye']:.2f}) "
                           f"brow({features['browL']:.2f},{features['browR']:.2f}) "
@@ -441,23 +497,32 @@ def main():
                           f"blink({'L' if features['blinkL'] else '-'}{'R' if features['blinkR'] else '-'})",
                           end='', flush=True)
 
-                # Draw landmarks and feature overlays if showing preview
-                if args.show:
-                    draw_landmarks_on_frame(frame, landmarks, w, h)
-                    draw_feature_overlay(frame, features, w, h)
+                # ── Preview overlay (landmarks + bars) ──
+                if show_cv2:
+                    import cv2
+                    # Pi Camera returns RGB → convert to BGR for display
+                    display = cv2.cvtColor(frame_rgb, cv2.COLOR_RGB2BGR) if using_picamera else frame_rgb
+                    draw_landmarks_on_frame(display, landmarks, w, h)
+                    draw_feature_overlay(display, features, w, h)
+                    # Pi Camera: show mode and AF state
+                    if using_picamera:
+                        af = cam.get_autofocus_state()
+                        cv2.putText(display, f"Pi Camera | {args.camera_mode} | AF:{af}",
+                                    (8, h - 8), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 255, 100), 1)
+                    cv2.imshow('NERVE Bridge', display)
+                    if cv2.waitKey(1) & 0xFF == ord('q'):
+                        break
+
             else:
-                if args.show:
-                    cv2.putText(frame, "No face detected", (20, 40),
+                if show_cv2:
+                    import cv2
+                    display = cv2.cvtColor(frame_rgb, cv2.COLOR_RGB2BGR) if using_picamera else frame_rgb
+                    cv2.putText(display, "No face detected", (20, 40),
                                 cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+                    cv2.imshow('NERVE Bridge', display)
+                    cv2.waitKey(1)
 
-            if args.show:
-                cv2.putText(frame, f"NERVE Bridge | {actual_fps:.0f} fps", (20, h - 20),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (100, 255, 100), 1)
-                cv2.imshow('NERVE Bridge', frame)
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    break
-
-            # Frame rate limiting
+            # ── Frame rate limiting ──
             elapsed = time.time() - t0
             if elapsed < frame_time:
                 time.sleep(frame_time - elapsed)
@@ -466,8 +531,9 @@ def main():
         print("\n\nStopped.")
 
     finally:
-        cap.release()
-        if args.show:
+        cam.close()
+        if show_cv2:
+            import cv2
             cv2.destroyAllWindows()
         sock.close()
         landmarker.close()
