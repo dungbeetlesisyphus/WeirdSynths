@@ -254,7 +254,7 @@ struct DepthWidget : ModuleWidget {
                 }
                 module->listener.stop();
                 module->listener.start(module->depthPort, module->skelPort);
-                ui::MenuOverlay::getAncestorOfType<ui::MenuOverlay>()->requestDelete();
+                getAncestorOfType<ui::MenuOverlay>()->requestDelete();
                 e.consume(this);
             }
             TextField::onSelectKey(e);
