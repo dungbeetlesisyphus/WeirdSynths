@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   width="101.6mm"
+   height="128.5mm"
+   viewBox="0 0 101.6 128.5">
+
+  <defs>
+    <style>
+      .panel-bg { fill: #0a0a0f; }
+      .panel-border { fill: none; stroke: #1a1a2a; stroke-width: 0.3; }
+      .label { font-family: 'Share Tech Mono', 'Courier New', monospace; fill: #8888aa; font-size: 2.2px; text-anchor: middle; }
+      .label-sm { font-family: 'Share Tech Mono', 'Courier New', monospace; fill: #666688; font-size: 1.8px; text-anchor: middle; }
+      .title { font-family: 'Share Tech Mono', 'Courier New', monospace; fill: #7c5cff; font-size: 4px; font-weight: bold; letter-spacing: 1px; }
+      .brand { font-family: 'Share Tech Mono', 'Courier New', monospace; fill: #444466; font-size: 2px; text-anchor: end; }
+      .section-line { stroke: #222244; stroke-width: 0.15; }
+      .section-label { font-family: 'Share Tech Mono', 'Courier New', monospace; fill: #444466; font-size: 1.6px; }
+      .wireframe { fill: none; stroke: #7c5cff; stroke-width: 0.3; opacity: 0.35; }
+      .wire-eye { fill: none; stroke: #7c5cff; stroke-width: 0.25; opacity: 0.3; }
+      .wire-mouth { fill: none; stroke: #7c5cff; stroke-width: 0.25; opacity: 0.3; }
+    </style>
+  </defs>
+
+  <!-- Panel background -->
+  <rect class="panel-bg" x="0" y="0" width="101.6" height="128.5" />
+  <rect class="panel-border" x="0.15" y="0.15" width="101.3" height="128.2" rx="0.3" />
+
+  <!-- Title bar -->
+  <text class="title" x="5" y="6">NERVE</text>
+  <text class="brand" x="97" y="6">WeirdSynths</text>
+
+  <!-- Subtle face wireframe in center (static — NanoVG will override when tracking) -->
+  <g transform="translate(50.8, 48)" id="face-wireframe">
+    <!-- Face outline -->
+    <ellipse class="wireframe" cx="0" cy="0" rx="14" ry="18" />
+
+    <!-- Left eye -->
+    <ellipse class="wire-eye" cx="-5.5" cy="-4" rx="3.2" ry="1.8" />
+    <circle class="wire-eye" cx="-5.5" cy="-4" r="1" />
+
+    <!-- Right eye -->
+    <ellipse class="wire-eye" cx="5.5" cy="-4" rx="3.2" ry="1.8" />
+    <circle class="wire-eye" cx="5.5" cy="-4" r="1" />
+
+    <!-- Nose -->
+    <path class="wireframe" d="M 0,-1 L -1.5,4 L 0,5 L 1.5,4 Z" />
+
+    <!-- Mouth -->
+    <path class="wire-mouth" d="M -4,8 Q -2,6 0,6 Q 2,6 4,8" />
+    <path class="wire-mouth" d="M -4,8 Q -2,10 0,10 Q 2,10 4,8" />
+
+    <!-- Left brow -->
+    <path class="wireframe" d="M -8.5,-7 Q -5.5,-9.5 -2.5,-7.5" />
+
+    <!-- Right brow -->
+    <path class="wireframe" d="M 2.5,-7.5 Q 5.5,-9.5 8.5,-7" />
+
+    <!-- Jaw line -->
+    <path class="wireframe" d="M -12,0 Q -10,14 0,18 Q 10,14 12,0" />
+  </g>
+
+  <!-- ═══ Section: RAW OUTPUTS ═══ -->
+  <!-- Output jack labels are positioned to match NerveWidget coordinates -->
+  <!-- Widget coords / 3 = mm coords (VCV standard: 3px per mm) -->
+
+  <!-- Row 1: HEAD X (62/3=20.7mm, 50/3=16.7mm), HEAD Y (165/3=55mm) -->
+  <text class="label" x="20.7" y="14.5">HEAD X</text>
+  <text class="label" x="55" y="14.5">HEAD Y</text>
+
+  <!-- Row 2: HEAD Z, DIST -->
+  <text class="label" x="20.7" y="23.8">HEAD Z</text>
+  <text class="label" x="55" y="23.8">DIST</text>
+
+  <!-- Row 3: L EYE, R EYE -->
+  <text class="label" x="20.7" y="34.2">L EYE</text>
+  <text class="label" x="55" y="34.2">R EYE</text>
+
+  <!-- Row 4: GAZE X, GAZE Y -->
+  <text class="label" x="20.7" y="43.5">GAZE X</text>
+  <text class="label" x="55" y="43.5">GAZE Y</text>
+
+  <!-- Row 5: MOUTH W, MOUTH H -->
+  <text class="label" x="20.7" y="54.2">MOUTH W</text>
+  <text class="label" x="55" y="54.2">MOUTH H</text>
+
+  <!-- Row 6: JAW, LIPS -->
+  <text class="label" x="20.7" y="63.5">JAW</text>
+  <text class="label" x="55" y="63.5">LIPS</text>
+
+  <!-- Row 7: BROW L, BROW R -->
+  <text class="label" x="20.7" y="72.8">BROW L</text>
+  <text class="label" x="55" y="72.8">BROW R</text>
+
+  <!-- Row 8: BLINK, EXPR -->
+  <text class="label" x="20.7" y="82.2">BLINK</text>
+  <text class="label" x="55" y="82.2">EXPR</text>
+
+  <!-- ═══ Section divider: CONTROLS ═══ -->
+  <line class="section-line" x1="5" y1="94" x2="97" y2="94" />
+  <text class="section-label" x="5" y="97">CONTROLS</text>
+
+  <!-- Knob labels: SMOOTH, SCALE, LOOP LEN -->
+  <!-- COL2=55/3=18.3, COL4=130/3=43.3, COL6=200/3=66.7 -->
+  <text class="label-sm" x="18.3" y="96.5">SMOOTH</text>
+  <text class="label-sm" x="43.3" y="96.5">SCALE</text>
+  <text class="label-sm" x="66.7" y="96.5">LOOP LEN</text>
+
+  <!-- Input labels -->
+  <text class="label-sm" x="18.3" y="105.8">SM IN</text>
+  <text class="label-sm" x="43.3" y="105.8">SC IN</text>
+  <text class="label-sm" x="66.7" y="105.8">CLOCK</text>
+
+  <!-- Button labels -->
+  <text class="label-sm" x="18.3" y="116">CAM</text>
+  <text class="label-sm" x="43.3" y="116">REC</text>
+  <text class="label-sm" x="66.7" y="116">FACES</text>
+
+</svg>

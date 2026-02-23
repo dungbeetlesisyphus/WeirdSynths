@@ -1,0 +1,28 @@
+{
+  "slug": "WeirdSynths",
+  "name": "WeirdSynths",
+  "version": "2.0.0",
+  "license": "GPL-3.0-or-later",
+  "brand": "WeirdSynths",
+  "author": "Millicent",
+  "authorEmail": "",
+  "authorUrl": "https://facefront.netlify.app",
+  "pluginUrl": "https://facefront.netlify.app",
+  "manualUrl": "",
+  "sourceUrl": "",
+  "donateUrl": "",
+  "changelogUrl": "",
+  "modules": [
+    {
+      "slug": "Nerve",
+      "name": "NERVE",
+      "description": "Face landmark tracking to CV — your face is a modular controller",
+      "tags": [
+        "Controller",
+        "External",
+        "Polyphonic",
+        "Utility"
+      ]
+    }
+  ]
+}

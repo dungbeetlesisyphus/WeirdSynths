@@ -1,0 +1,24 @@
+# Build artifacts
+build/
+dep/
+dist/
+plugin.dylib
+plugin.so
+plugin.dll
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
