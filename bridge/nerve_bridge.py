@@ -7,7 +7,9 @@ to NERVE module on localhost:9000.
 
 Usage:
     pip install mediapipe opencv-python
-    python nerve_bridge.py [--port 9000] [--camera 0] [--show]
+    python nerve_bridge.py [--port 9000] [--port 9001] [--camera 0] [--show]
+
+Sends to all specified ports simultaneously (default: 9000 for NERVE, 9001 for SKULL).
 
 First run downloads the face_landmarker model (~4MB) automatically.
 
@@ -286,7 +288,8 @@ def draw_landmarks_on_frame(frame, landmarks, w, h):
 
 def main():
     parser = argparse.ArgumentParser(description='NERVE Bridge — Face to VCV Rack')
-    parser.add_argument('--port', type=int, default=9000, help='UDP port (default: 9000)')
+    parser.add_argument('--port', type=int, nargs='+', default=[9000, 9001],
+                        help='UDP port(s) to send to (default: 9000 9001)')
     parser.add_argument('--host', type=str, default='127.0.0.1', help='Target host (default: 127.0.0.1)')
     parser.add_argument('--camera', type=int, default=0, help='Camera index (default: 0)')
     parser.add_argument('--show', action='store_true', help='Show camera preview window')
@@ -299,8 +302,10 @@ def main():
 
     # ── Setup UDP ──
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    target = (args.host, args.port)
-    print(f"NERVE Bridge -> {args.host}:{args.port}")
+    ports = args.port if isinstance(args.port, list) else [args.port]
+    targets = [(args.host, p) for p in ports]
+    port_str = ', '.join(str(p) for p in ports)
+    print(f"NERVE Bridge -> {args.host}:[{port_str}]")
 
     # ── Setup MediaPipe FaceLandmarker (new Tasks API) ──
     BaseOptions = mp.tasks.BaseOptions
@@ -369,9 +374,10 @@ def main():
                 blendshapes = get_blendshape_dict(result.face_blendshapes[0])
                 features = extract_features(blendshapes, landmarks)
 
-                # Send UDP packet
+                # Send UDP packet to all targets
                 packet = pack_nerve_packet(features)
-                sock.sendto(packet, target)
+                for t in targets:
+                    sock.sendto(packet, t)
 
                 # Status display
                 frame_count += 1

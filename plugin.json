@@ -23,6 +23,16 @@
         "Polyphonic",
         "Utility"
       ]
+    },
+    {
+      "slug": "Skull",
+      "name": "SKULL",
+      "description": "Face-controlled drum machine — blink kicks, jaw snares, brow hats",
+      "tags": [
+        "Drum",
+        "Controller",
+        "External"
+      ]
     }
   ]
 }

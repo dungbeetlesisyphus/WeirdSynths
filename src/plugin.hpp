@@ -8,3 +8,4 @@ extern Plugin* pluginInstance;
 
 // Forward-declare each module model
 extern Model* modelNerve;
+extern Model* modelSkull;

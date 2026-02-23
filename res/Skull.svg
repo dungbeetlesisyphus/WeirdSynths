@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns="http://www.w3.org/2000/svg"
+   width="101.6mm"
+   height="128.5mm"
+   viewBox="0 0 101.6 128.5">
+
+  <defs>
+    <style>
+      .panel-bg { fill: #0a0a0f; }
+      .panel-border { fill: none; stroke: #1a1a2a; stroke-width: 0.3; }
+      .label { font-family: 'Share Tech Mono', 'Courier New', monospace; fill: #8888aa; font-size: 2.2px; text-anchor: middle; }
+      .label-sm { font-family: 'Share Tech Mono', 'Courier New', monospace; fill: #666688; font-size: 1.8px; text-anchor: middle; }
+      .title { font-family: 'Share Tech Mono', 'Courier New', monospace; fill: #ff6b5c; font-size: 4px; font-weight: bold; letter-spacing: 1px; }
+      .brand { font-family: 'Share Tech Mono', 'Courier New', monospace; fill: #444466; font-size: 2px; text-anchor: end; }
+      .section-line { stroke: #222244; stroke-width: 0.15; }
+      .section-label { font-family: 'Share Tech Mono', 'Courier New', monospace; fill: #444466; font-size: 1.6px; }
+      .skull-line { fill: none; stroke: #ff6b5c; stroke-width: 0.3; opacity: 0.3; }
+      .skull-fill { fill: #ff6b5c; opacity: 0.08; }
+      .voice-label { font-family: 'Share Tech Mono', 'Courier New', monospace; fill: #ff6b5c; font-size: 2.4px; font-weight: bold; text-anchor: middle; }
+    </style>
+  </defs>
+
+  <!-- Panel background -->
+  <rect class="panel-bg" x="0" y="0" width="101.6" height="128.5" />
+  <rect class="panel-border" x="0.15" y="0.15" width="101.3" height="128.2" rx="0.3" />
+
+  <!-- Title bar -->
+  <text class="title" x="5" y="6">SKULL</text>
+  <text class="brand" x="97" y="6">WeirdSynths</text>
+
+  <!-- Skull wireframe watermark -->
+  <g transform="translate(50.8, 32)" id="skull-wireframe">
+    <!-- Cranium -->
+    <ellipse class="skull-fill" cx="0" cy="-2" rx="16" ry="18" />
+    <ellipse class="skull-line" cx="0" cy="-2" rx="16" ry="18" />
+    <!-- Left eye socket -->
+    <ellipse class="skull-line" cx="-6" cy="-4" rx="4" ry="3.5" />
+    <!-- Right eye socket -->
+    <ellipse class="skull-line" cx="6" cy="-4" rx="4" ry="3.5" />
+    <!-- Nose -->
+    <path class="skull-line" d="M -1.5,3 L 0,1 L 1.5,3" />
+    <!-- Teeth -->
+    <line class="skull-line" x1="-7" y1="9" x2="7" y2="9" />
+    <line class="skull-line" x1="-5" y1="9" x2="-5" y2="12" />
+    <line class="skull-line" x1="-2.5" y1="9" x2="-2.5" y2="12" />
+    <line class="skull-line" x1="0" y1="9" x2="0" y2="12" />
+    <line class="skull-line" x1="2.5" y1="9" x2="2.5" y2="12" />
+    <line class="skull-line" x1="5" y1="9" x2="5" y2="12" />
+    <line class="skull-line" x1="-7" y1="12" x2="7" y2="12" />
+    <!-- Jaw outline -->
+    <path class="skull-line" d="M -14,2 Q -12,14 0,16 Q 12,14 14,2" />
+  </g>
+
+  <!-- ═══ VOICE OUTPUTS ═══ -->
+
+  <!-- Row 1: KICK + SNARE -->
+  <text class="voice-label" x="20.7" y="54">KICK</text>
+  <text class="voice-label" x="55" y="54">SNARE</text>
+
+  <!-- Row 2: CH + OH -->
+  <text class="voice-label" x="20.7" y="66">CH</text>
+  <text class="voice-label" x="55" y="66">OH</text>
+
+  <!-- Row 3: Individual outputs label -->
+  <text class="label-sm" x="20.7" y="57">BLINK</text>
+  <text class="label-sm" x="55" y="57">JAW</text>
+  <text class="label-sm" x="20.7" y="69">BROW L</text>
+  <text class="label-sm" x="55" y="69">BROW R</text>
+
+  <!-- Row 4: MIX OUT -->
+  <text class="label" x="80.5" y="54">MIX L</text>
+  <text class="label" x="80.5" y="66">MIX R</text>
+
+  <!-- ═══ Section divider: CONTROLS ═══ -->
+  <line class="section-line" x1="5" y1="76" x2="97" y2="76" />
+  <text class="section-label" x="5" y="79">CONTROLS</text>
+
+  <!-- Knob labels row 1: KIT, SENS, DECAY -->
+  <text class="label-sm" x="18.3" y="82">KIT</text>
+  <text class="label-sm" x="43.3" y="82">SENS</text>
+  <text class="label-sm" x="66.7" y="82">DECAY</text>
+
+  <!-- Knob labels row 2: TONE, PAN, LEVEL -->
+  <text class="label-sm" x="18.3" y="94">TONE</text>
+  <text class="label-sm" x="43.3" y="94">PAN</text>
+  <text class="label-sm" x="66.7" y="94">LEVEL</text>
+
+  <!-- Input labels -->
+  <text class="label-sm" x="18.3" y="105.8">TRIG IN</text>
+  <text class="label-sm" x="43.3" y="105.8">ACCENT</text>
+  <text class="label-sm" x="66.7" y="105.8">CLOCK</text>
+
+  <!-- Button labels -->
+  <text class="label-sm" x="18.3" y="116">CAM</text>
+  <text class="label-sm" x="43.3" y="116">MUTE</text>
+  <text class="label-sm" x="66.7" y="116">MODE</text>
+
+</svg>

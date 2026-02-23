@@ -22,3 +22,4 @@ __pycache__/
 *.pyc
 .venv/
 venv/
+bridge/face_landmarker.task
