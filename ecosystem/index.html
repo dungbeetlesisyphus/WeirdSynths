@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WeirdSynths Ecosystem Vision</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;600;700&display=swap');
+
+  :root {
+    --green: #00ff88;
+    --green-dim: #00cc6a;
+    --green-glow: rgba(0,255,136,0.15);
+    --amber: #ffaa00;
+    --red: #ff4444;
+    --bg: #070d0a;
+    --card: #0a120d;
+    --border: rgba(0,255,136,0.2);
+    --text: #c8ffe0;
+    --text-dim: rgba(200,255,224,0.5);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 14px;
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* CRT scanlines */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.03) 2px,
+      rgba(0,0,0,0.03) 4px
+    );
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 48px;
+    background: rgba(7,13,10,0.96);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    gap: 32px;
+    z-index: 100;
+    backdrop-filter: blur(8px);
+  }
+
+  .nav-brand {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--green);
+    letter-spacing: 2px;
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+
+  nav a {
+    color: var(--text-dim);
+    text-decoration: none;
+    font-size: 12px;
+    letter-spacing: 1px;
+    transition: color 0.2s;
+  }
+
+  nav a:hover, nav a.active { color: var(--green); }
+
+  /* HERO */
+  .hero {
+    margin-top: 48px;
+    padding: 80px 24px 60px;
+    text-align: center;
+    background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(0,255,136,0.06) 0%, transparent 70%);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .hero-eyebrow {
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--green-dim);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .hero h1 {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: clamp(36px, 6vw, 72px);
+    font-weight: 700;
+    color: var(--green);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    text-shadow: 0 0 40px rgba(0,255,136,0.4);
+    line-height: 1;
+    margin-bottom: 16px;
+  }
+
+  .hero-sub {
+    color: var(--text-dim);
+    font-size: 13px;
+    letter-spacing: 2px;
+    max-width: 600px;
+    margin: 0 auto 40px;
+  }
+
+  .layer-diagram {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 2px;
+    text-align: left;
+    margin: 0 auto;
+    font-size: 13px;
+  }
+
+  .layer {
+    padding: 14px 28px;
+    border: 1px solid var(--border);
+    position: relative;
+    letter-spacing: 1px;
+  }
+
+  .layer-1 { border-color: var(--green); background: rgba(0,255,136,0.05); color: var(--green); }
+  .layer-2 { border-color: rgba(0,255,136,0.4); background: rgba(0,255,136,0.03); color: var(--text); }
+  .layer-3 { border-color: rgba(0,255,136,0.2); background: rgba(0,255,136,0.01); color: var(--text-dim); }
+
+  .layer-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    opacity: 0.6;
+    margin-right: 16px;
+    text-transform: uppercase;
+  }
+
+  /* MAIN LAYOUT */
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px 80px;
+  }
+
+  /* SECTION */
+  .section {
+    margin-top: 64px;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 32px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section-num {
+    font-size: 11px;
+    color: var(--green);
+    opacity: 0.5;
+    letter-spacing: 2px;
+  }
+
+  .section-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--green);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+
+  /* HARDWARE GRID */
+  .hw-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+  }
+
+  .hw-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 24px;
+    position: relative;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .hw-card:hover {
+    border-color: var(--green);
+    box-shadow: 0 0 20px var(--green-glow);
+  }
+
+  .hw-card.featured {
+    border-color: var(--green);
+    background: rgba(0,255,136,0.03);
+  }
+
+  .hw-badge {
+    position: absolute;
+    top: 12px; right: 12px;
+    font-size: 10px;
+    letter-spacing: 1px;
+    padding: 3px 8px;
+    background: var(--green);
+    color: var(--bg);
+    font-weight: 700;
+  }
+
+  .hw-name {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--green);
+    letter-spacing: 2px;
+    margin-bottom: 4px;
+  }
+
+  .hw-price {
+    font-size: 22px;
+    color: var(--amber);
+    margin-bottom: 16px;
+  }
+
+  .hw-spec {
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 2;
+  }
+
+  .hw-spec strong {
+    color: var(--text);
+    display: inline-block;
+    min-width: 120px;
+  }
+
+  .hw-features {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  .hw-feature {
+    font-size: 12px;
+    color: var(--text-dim);
+    padding: 2px 0;
+  }
+
+  .hw-feature::before { content: '→ '; color: var(--green); }
+
+  /* AI CHOICE */
+  .ai-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  @media (max-width: 768px) {
+    .ai-grid { grid-template-columns: 1fr; }
+  }
+
+  .ai-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 24px;
+    transition: border-color 0.2s;
+  }
+
+  .ai-card.recommended {
+    border-color: var(--green);
+    position: relative;
+  }
+
+  .ai-card.recommended::before {
+    content: 'RECOMMENDED';
+    position: absolute;
+    top: -1px; left: 50%; transform: translateX(-50%);
+    background: var(--green);
+    color: var(--bg);
+    font-size: 9px;
+    letter-spacing: 2px;
+    padding: 3px 10px;
+    font-weight: 700;
+  }
+
+  .ai-mode {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--green);
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+  }
+
+  .ai-desc {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+    line-height: 1.8;
+  }
+
+  .check-list { list-style: none; }
+
+  .check-list li {
+    font-size: 12px;
+    padding: 3px 0;
+    color: var(--text-dim);
+  }
+
+  .check-list li.yes { color: var(--green); }
+  .check-list li.yes::before { content: '✓ '; }
+  .check-list li.no::before { content: '✗ '; color: var(--red); }
+  .check-list li.tilde::before { content: '~ '; color: var(--amber); }
+
+  /* TOPS TABLE */
+  .tops-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  @media (max-width: 768px) {
+    .tops-container { grid-template-columns: 1fr; }
+  }
+
+  .tops-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 24px;
+  }
+
+  .tops-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--green);
+    letter-spacing: 2px;
+    margin-bottom: 16px;
+    text-transform: uppercase;
+  }
+
+  .tops-bar-row {
+    margin-bottom: 10px;
+  }
+
+  .tops-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+    letter-spacing: 1px;
+  }
+
+  .tops-bar {
+    height: 6px;
+    background: rgba(0,255,136,0.1);
+    border: 1px solid rgba(0,255,136,0.2);
+    position: relative;
+  }
+
+  .tops-fill {
+    height: 100%;
+    background: var(--green);
+    transition: width 1s ease;
+    box-shadow: 0 0 8px rgba(0,255,136,0.5);
+  }
+
+  .tops-total {
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--text-dim);
+    text-align: right;
+  }
+
+  .tops-total strong { color: var(--amber); font-size: 14px; }
+
+  /* OFFLINE TABLE */
+  .feature-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  @media (max-width: 768px) {
+    .feature-grid { grid-template-columns: 1fr; }
+  }
+
+  .feature-col {
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 24px;
+  }
+
+  .feature-col.online { border-color: rgba(255,170,0,0.3); }
+
+  .feature-col-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    margin-bottom: 16px;
+    text-transform: uppercase;
+  }
+
+  .feature-col.offline .feature-col-title { color: var(--green); }
+  .feature-col.online .feature-col-title { color: var(--amber); }
+
+  .feature-item {
+    font-size: 12px;
+    color: var(--text-dim);
+    padding: 5px 0;
+    border-bottom: 1px solid rgba(0,255,136,0.05);
+  }
+
+  .feature-col.offline .feature-item::before { content: '✓ '; color: var(--green); }
+  .feature-col.online .feature-item::before { content: '+ '; color: var(--amber); }
+
+  /* ROADMAP */
+  .roadmap {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .phase-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 24px;
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+
+  @media (max-width: 640px) {
+    .phase-card { grid-template-columns: 1fr; }
+  }
+
+  .phase-meta {}
+  .phase-name {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--green);
+    letter-spacing: 2px;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+  }
+
+  .phase-time {
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+  }
+
+  .phase-items {
+    columns: 2;
+    column-gap: 24px;
+  }
+
+  @media (max-width: 640px) {
+    .phase-items { columns: 1; }
+  }
+
+  .phase-item {
+    font-size: 12px;
+    color: var(--text-dim);
+    padding: 3px 0;
+    break-inside: avoid;
+  }
+
+  .phase-item::before { content: '□ '; color: var(--green); opacity: 0.4; }
+  .phase-item.done { color: rgba(200,255,224,0.3); text-decoration: line-through; }
+  .phase-item.done::before { content: '■ '; opacity: 0.3; }
+
+  /* REVENUE */
+  .revenue-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .revenue-table th {
+    text-align: left;
+    padding: 10px 16px;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--green);
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+  }
+
+  .revenue-table td {
+    padding: 10px 16px;
+    border-bottom: 1px solid rgba(0,255,136,0.05);
+    color: var(--text-dim);
+  }
+
+  .revenue-table tr:hover td { background: rgba(0,255,136,0.02); }
+
+  .revenue-table .total td {
+    color: var(--amber);
+    font-weight: 700;
+    border-top: 1px solid var(--border);
+    border-bottom: none;
+  }
+
+  .rev-amount { color: var(--green); font-weight: bold; }
+
+  /* PRINCIPLES */
+  .principles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+  }
+
+  .principle {
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 20px;
+    transition: border-color 0.2s;
+  }
+
+  .principle:hover { border-color: var(--green); }
+
+  .principle-num {
+    font-size: 10px;
+    color: var(--green);
+    opacity: 0.5;
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+  }
+
+  .principle-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--green);
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+  }
+
+  .principle-text {
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.8;
+  }
+
+  /* FOOTER */
+  footer {
+    text-align: center;
+    padding: 40px 24px;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+  }
+
+  .glow { color: var(--green); text-shadow: 0 0 10px rgba(0,255,136,0.5); }
+
+  /* BLINKING CURSOR */
+  .cursor::after {
+    content: '_';
+    animation: blink 1s step-end infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  code {
+    background: rgba(0,255,136,0.08);
+    border: 1px solid rgba(0,255,136,0.15);
+    padding: 1px 6px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    color: var(--green);
+  }
+
+  p {
+    color: var(--text-dim);
+    font-size: 13px;
+    line-height: 1.8;
+    max-width: 800px;
+    margin-bottom: 16px;
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" href="../docs/index.html">WeirdSynths</a>
+  <a href="../docs/modules.html">Modules</a>
+  <a href="../docs/guide.html">Guide</a>
+  <a href="../docs/ideas.html">Ideas</a>
+  <a href="../docs/weirdos.html">WeirdOS</a>
+  <a href="../weirdphone/wireframes/index.html">WeirdPhone</a>
+  <a href="index.html" class="active">Ecosystem</a>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-eyebrow">Platform Strategy · 2026</div>
+  <h1>WeirdSynths<br>Ecosystem<span class="cursor"></span></h1>
+  <div class="hero-sub">Body → Intelligence → Sound. One open platform.</div>
+
+  <div class="layer-diagram">
+    <div class="layer layer-1">
+      <span class="layer-label">Software</span>
+      VCV Rack Plugins · WeirdPhone · WeirdStudio (Web UI)
+    </div>
+    <div class="layer layer-2">
+      <span class="layer-label">Intelligence</span>
+      Local LLM (Qwen2.5-Coder) · Cloud AI (Claude) · Neural Models
+    </div>
+    <div class="layer layer-3">
+      <span class="layer-label">Hardware</span>
+      WeirdBox · WeirdPhone · WeirdFace — all on WeirdConnect
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- HARDWARE -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">01</span>
+      <span class="section-title">Hardware Line</span>
+    </div>
+
+    <div class="hw-grid">
+      <div class="hw-card featured">
+        <div class="hw-badge">HERO PRODUCT</div>
+        <div class="hw-name">WeirdBox Standard</div>
+        <div class="hw-price">$249</div>
+        <div class="hw-spec">
+          <strong>Compute</strong> Pi 5 (8GB RAM)<br>
+          <strong>AI Chip</strong> Hailo-10H (40 TOPS)<br>
+          <strong>HAT RAM</strong> 8GB LPDDR4X<br>
+          <strong>Storage</strong> 64GB industrial SD<br>
+          <strong>Camera</strong> Pi Camera Module 3<br>
+          <strong>OS</strong> WeirdOS (Buildroot)
+        </div>
+        <div class="hw-features">
+          <div class="hw-feature">Full biometric tracking suite</div>
+          <div class="hw-feature">All 8+ VCV Rack modules</div>
+          <div class="hw-feature">WeirdMaker (local LLM module factory)</div>
+          <div class="hw-feature">WeirdStudio web UI</div>
+          <div class="hw-feature">VCV bundle serial key (Full tier)</div>
+        </div>
+      </div>
+
+      <div class="hw-card">
+        <div class="hw-name">WeirdBox Pro</div>
+        <div class="hw-price">$349</div>
+        <div class="hw-spec">
+          <strong>Everything in Standard+</strong><br>
+          <strong>Storage</strong> 256GB NVMe (PCIe)<br>
+          <strong>Models</strong> Full synthesis AI zoo<br>
+          <strong>LLM</strong> Qwen2.5-Coder + VL (vision)
+        </div>
+        <div class="hw-features">
+          <div class="hw-feature">TIMBRE, SPLIT, FORGE, IRON modules</div>
+          <div class="hw-feature">ROOM visual acoustics module</div>
+          <div class="hw-feature">Offline VCV patch rendering</div>
+          <div class="hw-feature">Rack ears + DIN rail mount</div>
+        </div>
+      </div>
+
+      <div class="hw-card">
+        <div class="hw-name">WeirdBox DIY</div>
+        <div class="hw-price">$129</div>
+        <div class="hw-spec">
+          <strong>Format</strong> Image + modules only<br>
+          <strong>Hardware</strong> Bring your own Pi 5<br>
+          <strong>Identical</strong> to Standard (software)
+        </div>
+        <div class="hw-features">
+          <div class="hw-feature">Full WeirdOS image download</div>
+          <div class="hw-feature">All modules + WeirdMaker</div>
+          <div class="hw-feature">Setup guide for DIY builds</div>
+        </div>
+      </div>
+
+      <div class="hw-card">
+        <div class="hw-name">WeirdPhone</div>
+        <div class="hw-price">Free + $9.99 Pro</div>
+        <div class="hw-spec">
+          <strong>Platform</strong> iOS 17+ (iPhone X+)<br>
+          <strong>Sensor</strong> TrueDepth camera<br>
+          <strong>Speed</strong> 52 blendshapes @ 60fps<br>
+          <strong>CPU cost</strong> Zero (Neural Engine)
+        </div>
+        <div class="hw-features">
+          <div class="hw-feature">Free: 8 CVs, UDP, fixed mapping</div>
+          <div class="hw-feature">Pro: 64 CVs, OSC + MIDI, custom MAP</div>
+          <div class="hw-feature">Auto-discovers NERVE on WiFi</div>
+        </div>
+      </div>
+
+      <div class="hw-card">
+        <div class="hw-badge" style="background: rgba(0,255,136,0.2); color: var(--green);">2026 Q3</div>
+        <div class="hw-name">WeirdFace</div>
+        <div class="hw-price">$449</div>
+        <div class="hw-spec">
+          <strong>Format</strong> 4HP Eurorack<br>
+          <strong>Power</strong> ±12V, 500mA<br>
+          <strong>AI</strong> Hailo-8L on-board<br>
+          <strong>Camera</strong> Built-in wide-angle
+        </div>
+        <div class="hw-features">
+          <div class="hw-feature">8 configurable CV outputs (jacks)</div>
+          <div class="hw-feature">No phone, no WiFi needed</div>
+          <div class="hw-feature">Ribbon expander for 8 extra CVs</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI BACKEND CHOICE -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">02</span>
+      <span class="section-title">AI Backend — Your Choice</span>
+    </div>
+
+    <p>First boot asks once. Revisit anytime in Settings. No wrong answer.</p>
+
+    <div class="ai-grid">
+      <div class="ai-card recommended">
+        <div class="ai-mode">🖥 Local</div>
+        <div class="ai-desc">Qwen2.5-Coder 1.5B runs directly on the Hailo-10H's 8GB RAM. The Pi 5 doesn't even know it's happening.</div>
+        <ul class="check-list">
+          <li class="yes">Fully offline — works anywhere</li>
+          <li class="yes">Private — code never leaves device</li>
+          <li class="yes">No API costs, no subscription</li>
+          <li class="yes">Zero-config, works out of box</li>
+          <li class="tilde">~3-8s per generation (fast enough)</li>
+          <li class="tilde">~1.5B param model (skill-augmented)</li>
+        </ul>
+      </div>
+
+      <div class="ai-card">
+        <div class="ai-mode">☁️ Cloud</div>
+        <div class="ai-desc">Routes WeirdMaker queries to Claude API. Best quality for complex DSP math, debugging, multi-file refactoring.</div>
+        <ul class="check-list">
+          <li class="yes">Highest response quality</li>
+          <li class="yes">Latest knowledge</li>
+          <li class="yes">Better at complex DSP/math</li>
+          <li class="no">Requires internet connection</li>
+          <li class="no">API key + pay-as-you-go</li>
+          <li class="tilde">~$0.01-0.15 per query</li>
+        </ul>
+      </div>
+
+      <div class="ai-card">
+        <div class="ai-mode">⚡ Hybrid</div>
+        <div class="ai-desc">Local for quick tasks. Escalates to cloud when it needs to. WeirdMaker decides based on task complexity.</div>
+        <ul class="check-list">
+          <li class="yes">Fast simple answers, powerful complex ones</li>
+          <li class="yes">Works offline for most tasks</li>
+          <li class="yes">Best cost/quality balance</li>
+          <li class="tilde">Routing table is configurable</li>
+          <li class="tilde">Needs API key for escalation</li>
+          <li class="tilde">UI shows which backend was used</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOPS BUDGET -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">03</span>
+      <span class="section-title">40 TOPS Budget — Hailo-10H</span>
+    </div>
+
+    <div class="tops-container">
+      <div class="tops-card">
+        <div class="tops-title">Real-Time Tracking (~14 TOPS)</div>
+
+        <div class="tops-bar-row">
+          <div class="tops-label"><span>Face 478-point (GHUM)</span><span>3.5T</span></div>
+          <div class="tops-bar"><div class="tops-fill" style="width: 35%"></div></div>
+        </div>
+        <div class="tops-bar-row">
+          <div class="tops-label"><span>Body pose 33-point (BlazePose)</span><span>3.0T</span></div>
+          <div class="tops-bar"><div class="tops-fill" style="width: 30%"></div></div>
+        </div>
+        <div class="tops-bar-row">
+          <div class="tops-label"><span>Phoneme detector (wav2vec lite)</span><span>2.0T</span></div>
+          <div class="tops-bar"><div class="tops-fill" style="width: 20%"></div></div>
+        </div>
+        <div class="tops-bar-row">
+          <div class="tops-label"><span>Hands 42-point (2 hands)</span><span>2.0T</span></div>
+          <div class="tops-bar"><div class="tops-fill" style="width: 20%"></div></div>
+        </div>
+        <div class="tops-bar-row">
+          <div class="tops-label"><span>Emotion classifier (AffectNet)</span><span>1.5T</span></div>
+          <div class="tops-bar"><div class="tops-fill" style="width: 15%"></div></div>
+        </div>
+        <div class="tops-bar-row">
+          <div class="tops-label"><span>Gaze estimator (L2CS-Net)</span><span>1.0T</span></div>
+          <div class="tops-bar"><div class="tops-fill" style="width: 10%"></div></div>
+        </div>
+        <div class="tops-bar-row">
+          <div class="tops-label"><span>Depth estimator (MiDaS lite)</span><span>1.0T</span></div>
+          <div class="tops-bar"><div class="tops-fill" style="width: 10%"></div></div>
+        </div>
+        <div class="tops-total">Used: <strong>14.0 TOPS</strong> of 40</div>
+      </div>
+
+      <div class="tops-card">
+        <div class="tops-title">Batch AI (~24 TOPS available)</div>
+
+        <div class="tops-bar-row">
+          <div class="tops-label"><span>Qwen2.5-Coder 1.5B (LLM)</span><span>8-12T burst</span></div>
+          <div class="tops-bar"><div class="tops-fill" style="width: 100%; background: var(--amber); box-shadow: 0 0 8px rgba(255,170,0,0.5);"></div></div>
+        </div>
+        <div class="tops-bar-row">
+          <div class="tops-label"><span>Demucs (SPLIT)</span><span>6.0T</span></div>
+          <div class="tops-bar"><div class="tops-fill" style="width: 60%"></div></div>
+        </div>
+        <div class="tops-bar-row">
+          <div class="tops-label"><span>DDSP instrument (TIMBRE)</span><span>4.0T</span></div>
+          <div class="tops-bar"><div class="tops-fill" style="width: 40%"></div></div>
+        </div>
+        <div class="tops-bar-row">
+          <div class="tops-label"><span>HiFiGAN vocoder (FORGE)</span><span>3.0T</span></div>
+          <div class="tops-bar"><div class="tops-fill" style="width: 30%"></div></div>
+        </div>
+        <div class="tops-bar-row">
+          <div class="tops-label"><span>Neural amp (IRON, stream)</span><span>1.5T</span></div>
+          <div class="tops-bar"><div class="tops-fill" style="width: 15%"></div></div>
+        </div>
+        <div class="tops-bar-row">
+          <div class="tops-label"><span>Room acoustics (ROOM)</span><span>1.5T</span></div>
+          <div class="tops-bar"><div class="tops-fill" style="width: 15%"></div></div>
+        </div>
+        <div class="tops-total">Available: <strong>~24 TOPS</strong> (8GB on-board HAT RAM)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OFFLINE vs ONLINE -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">04</span>
+      <span class="section-title">Offline vs Online Features</span>
+    </div>
+
+    <p style="margin-bottom: 24px;">WeirdBox works completely without internet. Network is enhancement, not requirement.</p>
+
+    <div class="feature-grid">
+      <div class="feature-col offline">
+        <div class="feature-col-title">Always Works Offline</div>
+        <div class="feature-item">Full biometric tracking (face, body, hands)</div>
+        <div class="feature-item">Gaze, emotion, phoneme, depth tracking</div>
+        <div class="feature-item">All VCV Rack CV output via WeirdConnect</div>
+        <div class="feature-item">WeirdPhone over local WiFi</div>
+        <div class="feature-item">WeirdMaker (local Qwen2.5-Coder)</div>
+        <div class="feature-item">Ideas Feed (local ideas.json, rating)</div>
+        <div class="feature-item">WeirdStudio (served from Pi itself)</div>
+        <div class="feature-item">Patch Library (local storage)</div>
+        <div class="feature-item">Preset save / recall</div>
+        <div class="feature-item">TIMBRE, SPLIT, FORGE, IRON (Pro)</div>
+        <div class="feature-item">Headless VCV Rack rendering (Pro)</div>
+        <div class="feature-item">No cloud activation, ever</div>
+      </div>
+
+      <div class="feature-col online">
+        <div class="feature-col-title">Enhanced with Internet</div>
+        <div class="feature-item">WeirdMaker Cloud (Claude API, better quality)</div>
+        <div class="feature-item">Ideas Feed AI (fresh daily module concepts)</div>
+        <div class="feature-item">Patch Library Cloud Sync</div>
+        <div class="feature-item">Firmware OTA (WeirdOS updates)</div>
+        <div class="feature-item">Model Zoo updates (newer AI models)</div>
+        <div class="feature-item">WeirdConnect Relay (remote collaboration)</div>
+        <div class="feature-item">Community Patches (browse + download)</div>
+        <div class="feature-item">Analytics (opt-in, improves Ideas Feed)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- REVENUE -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">05</span>
+      <span class="section-title">Revenue Model — Month 12</span>
+    </div>
+
+    <table class="revenue-table">
+      <thead>
+        <tr>
+          <th>Stream</th>
+          <th>Volume/Mo</th>
+          <th>Unit Price</th>
+          <th>Monthly</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>WeirdBox Standard</td><td>80 units</td><td>$249</td><td class="rev-amount">$19,920</td></tr>
+        <tr><td>WeirdBox Pro</td><td>30 units</td><td>$349</td><td class="rev-amount">$10,470</td></tr>
+        <tr><td>WeirdBox DIY</td><td>40 units</td><td>$129</td><td class="rev-amount">$5,160</td></tr>
+        <tr><td>WeirdPhone Pro</td><td>400 subs</td><td>$9.99</td><td class="rev-amount">$3,996</td></tr>
+        <tr><td>VCV Full Bundle</td><td>60 sales</td><td>$39</td><td class="rev-amount">$2,340</td></tr>
+        <tr><td>VCV Core Bundle</td><td>120 sales</td><td>$19</td><td class="rev-amount">$2,280</td></tr>
+        <tr><td>WeirdConnect Relay</td><td>80 subs</td><td>$4.99/mo</td><td class="rev-amount">$399</td></tr>
+        <tr><td>Cloud Sync</td><td>120 subs</td><td>$2.99/mo</td><td class="rev-amount">$359</td></tr>
+      </tbody>
+      <tfoot>
+        <tr class="total">
+          <td colspan="3">TOTAL (conservative, Month 12)</td>
+          <td>~$44,924/mo</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <!-- ROADMAP -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">06</span>
+      <span class="section-title">Build Roadmap</span>
+    </div>
+
+    <div class="roadmap">
+      <div class="phase-card">
+        <div class="phase-meta">
+          <div class="phase-name">Phase 1</div>
+          <div class="phase-time">Now → Month 3</div>
+          <div style="margin-top: 8px; font-size: 11px; color: var(--text-dim);">Foundation. Everything offline. Core experience end-to-end.</div>
+        </div>
+        <div class="phase-items">
+          <div class="phase-item">WeirdOS v1.0 image (Pi 5 + AI HAT+ 2)</div>
+          <div class="phase-item">Tracking bridge (all 7 models)</div>
+          <div class="phase-item">NERVE, SKULL, VOICE, MIRROR — VCV Library submit</div>
+          <div class="phase-item">WeirdPhone v1.0 — App Store submit</div>
+          <div class="phase-item">WeirdMaker v0.1 (local Qwen2.5-Coder)</div>
+          <div class="phase-item">Ideas Feed live (ideas.json + ideas.html)</div>
+        </div>
+      </div>
+
+      <div class="phase-card">
+        <div class="phase-meta">
+          <div class="phase-name">Phase 2</div>
+          <div class="phase-time">Month 3 → 6</div>
+          <div style="margin-top: 8px; font-size: 11px; color: var(--text-dim);">Intelligence mature. First hardware units ship.</div>
+        </div>
+        <div class="phase-items">
+          <div class="phase-item">WeirdMaker v1.0 (full 12-step pipeline)</div>
+          <div class="phase-item">Cloud/local/hybrid mode + setup wizard</div>
+          <div class="phase-item">Synthesis AI modules (TIMBRE, SPLIT, FORGE, IRON)</div>
+          <div class="phase-item">BODY, HAND, GAZE, EMOTION modules</div>
+          <div class="phase-item">WeirdBox first production run (50 units)</div>
+          <div class="phase-item">WeirdConnect Hub (multi-device)</div>
+          <div class="phase-item">WeirdStudio v1.0 (full 5-panel web UI)</div>
+        </div>
+      </div>
+
+      <div class="phase-card">
+        <div class="phase-meta">
+          <div class="phase-name">Phase 3</div>
+          <div class="phase-time">Month 6 → 12</div>
+          <div style="margin-top: 8px; font-size: 11px; color: var(--text-dim);">Platform. Community. Cloud services.</div>
+        </div>
+        <div class="phase-items">
+          <div class="phase-item">WeirdConnect Relay (remote CV)</div>
+          <div class="phase-item">Patch Library Cloud Sync</div>
+          <div class="phase-item">Ideas Feed AI curation + community ratings</div>
+          <div class="phase-item">WeirdConnect SDK (open release)</div>
+          <div class="phase-item">WeirdPhone Android</div>
+          <div class="phase-item">OTA firmware system for WeirdOS</div>
+          <div class="phase-item">WeirdBox v2 custom PCB (target $165 COGS)</div>
+        </div>
+      </div>
+
+      <div class="phase-card">
+        <div class="phase-meta">
+          <div class="phase-name">Phase 4</div>
+          <div class="phase-time">Year 2</div>
+          <div style="margin-top: 8px; font-size: 11px; color: var(--text-dim);">Expansion. New hardware. Content business.</div>
+        </div>
+        <div class="phase-items">
+          <div class="phase-item">WeirdFace 4HP Eurorack module</div>
+          <div class="phase-item">WeirdSynths Academy (course content)</div>
+          <div class="phase-item">Community Patch Store (rev share)</div>
+          <div class="phase-item">Expanded model zoo (musical genre, rhythm)</div>
+          <div class="phase-item">VST3/AU plugin (WeirdSynths in any DAW)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRINCIPLES -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">07</span>
+      <span class="section-title">Guiding Principles</span>
+    </div>
+
+    <div class="principles">
+      <div class="principle">
+        <div class="principle-num">01</div>
+        <div class="principle-title">Offline-First</div>
+        <div class="principle-text">Every core feature works without internet. Network is enhancement, not requirement. WeirdBox performs equally well on a tour bus in the desert as in a studio with fiber.</div>
+      </div>
+      <div class="principle">
+        <div class="principle-num">02</div>
+        <div class="principle-title">Privacy by Default</div>
+        <div class="principle-text">Local AI backend is recommended at setup. Your code, your patches, your face — none of it leaves the device unless you explicitly enable it.</div>
+      </div>
+      <div class="principle">
+        <div class="principle-num">03</div>
+        <div class="principle-title">Body as Instrument</div>
+        <div class="principle-text">The tracking is not a gimmick. Every module is designed around real musical expression — what your face, hands, and voice actually do when you perform.</div>
+      </div>
+      <div class="principle">
+        <div class="principle-num">04</div>
+        <div class="principle-title">Modular Philosophy</div>
+        <div class="principle-text">The platform is modular. WeirdPhone works without WeirdBox. WeirdFace works standalone. NERVE works without any WeirdSynths hardware. Mix and match.</div>
+      </div>
+      <div class="principle">
+        <div class="principle-num">05</div>
+        <div class="principle-title">Open Protocol</div>
+        <div class="principle-text">WeirdConnect is documented and MIT-licensed. Third-party developers can build devices that speak it. The ecosystem grows beyond WeirdSynths alone.</div>
+      </div>
+      <div class="principle">
+        <div class="principle-num">06</div>
+        <div class="principle-title">Maker Culture</div>
+        <div class="principle-text">WeirdMaker ships with the device because the people who buy WeirdBox are also the people who want to build their own modules. User and creator are the same person.</div>
+      </div>
+      <div class="principle">
+        <div class="principle-num">07</div>
+        <div class="principle-title">Hardware as Distribution</div>
+        <div class="principle-text">The physical box gets WeirdSynths onto desks and into studios. Software revenue sustains the business. The box doesn't need high margin at launch.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <div class="glow">WEIRD SYNTHS</div>
+  Platform Strategy · February 2026
+  <br><br>
+  See also:
+  <a href="../weirdphone/wireframes/index.html" style="color: var(--green-dim);">WeirdPhone Wireframes</a> ·
+  <a href="../docs/weirdos.html" style="color: var(--green-dim);">WeirdOS</a> ·
+  <a href="VISION.md" style="color: var(--green-dim);">VISION.md (raw)</a>
+</footer>
+
+</body>
+</html>

@@ -15,6 +15,7 @@ SOURCES += src/Nerve.cpp
 SOURCES += src/Skull.cpp
 SOURCES += src/Mirror.cpp
 SOURCES += src/Voice.cpp
+SOURCES += src/Depth.cpp
 
 DISTRIBUTABLES += res
 DISTRIBUTABLES += plugin.json

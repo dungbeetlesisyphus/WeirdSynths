@@ -10,4 +10,5 @@ void init(Plugin* p) {
     p->addModel(modelSkull);
     p->addModel(modelMirror);
     p->addModel(modelVoice);
+    p->addModel(modelDepth);
 }

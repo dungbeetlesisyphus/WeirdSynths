@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WeirdSynths — Module Ideas</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
+
+  :root {
+    --phosphor: #00ff88;
+    --phosphor-dim: #00a855;
+    --phosphor-glow: rgba(0,255,136,0.15);
+    --bg: #030a06;
+    --bg-panel: #050d08;
+    --amber: #ffaa00;
+    --amber-dim: #b37700;
+    --red: #ff3344;
+    --blue: #00aaff;
+    --grid: rgba(0,255,136,0.04);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--phosphor);
+    font-family: 'Share Tech Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+    cursor: crosshair;
+  }
+
+  /* CRT scanline overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.12) 2px,
+      rgba(0,0,0,0.12) 4px
+    );
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  /* Grid background */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background: rgba(3,10,6,0.95);
+    border-bottom: 1px solid var(--phosphor-dim);
+    padding: 0 2rem;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    backdrop-filter: blur(8px);
+  }
+
+  nav .brand {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 900;
+    font-size: 0.85rem;
+    letter-spacing: 0.25em;
+    color: var(--phosphor);
+    text-decoration: none;
+    text-shadow: 0 0 12px var(--phosphor);
+  }
+
+  nav a {
+    color: var(--phosphor-dim);
+    text-decoration: none;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    transition: color 0.2s;
+    text-transform: uppercase;
+  }
+
+  nav a:hover { color: var(--phosphor); }
+  nav a.active { color: var(--phosphor); text-shadow: 0 0 8px var(--phosphor); }
+
+  nav .spacer { flex: 1; }
+
+  .main {
+    display: grid;
+    grid-template-columns: 260px 1fr 220px;
+    grid-template-rows: auto 1fr;
+    height: 100vh;
+    padding-top: 52px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── LEFT SIDEBAR ── */
+  .sidebar-left {
+    border-right: 1px solid rgba(0,255,136,0.15);
+    padding: 1.5rem 1rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .sidebar-section {
+    border: 1px solid rgba(0,255,136,0.15);
+    padding: 0.75rem;
+  }
+
+  .sidebar-section h3 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    color: var(--phosphor-dim);
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+    border-bottom: 1px solid rgba(0,255,136,0.1);
+    padding-bottom: 0.4rem;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+
+  .stat-box {
+    text-align: center;
+    padding: 0.5rem;
+    border: 1px solid rgba(0,255,136,0.1);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .stat-box:hover { border-color: var(--phosphor); }
+  .stat-box.active { border-color: var(--phosphor); background: var(--phosphor-glow); }
+
+  .stat-num {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.4rem;
+    font-weight: 700;
+    display: block;
+  }
+
+  .stat-num.build { color: var(--phosphor); text-shadow: 0 0 12px var(--phosphor); }
+  .stat-num.maybe { color: var(--amber); text-shadow: 0 0 8px var(--amber); }
+  .stat-num.skip { color: var(--red); }
+  .stat-num.total { color: var(--phosphor-dim); }
+
+  .stat-label {
+    font-size: 0.6rem;
+    letter-spacing: 0.15em;
+    color: var(--phosphor-dim);
+    text-transform: uppercase;
+  }
+
+  .filter-btn {
+    display: block;
+    width: 100%;
+    background: none;
+    border: 1px solid rgba(0,255,136,0.15);
+    color: var(--phosphor-dim);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    padding: 0.4rem 0.6rem;
+    cursor: pointer;
+    text-align: left;
+    margin-bottom: 0.3rem;
+    transition: all 0.15s;
+    text-transform: uppercase;
+  }
+
+  .filter-btn:hover { color: var(--phosphor); border-color: var(--phosphor); }
+  .filter-btn.active { color: var(--phosphor); border-color: var(--phosphor); background: var(--phosphor-glow); }
+
+  .filter-btn .count {
+    float: right;
+    color: var(--phosphor-dim);
+    opacity: 0.6;
+  }
+
+  .category-btn {
+    display: inline-block;
+    background: none;
+    border: 1px solid rgba(0,255,136,0.15);
+    color: var(--phosphor-dim);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    padding: 0.25rem 0.4rem;
+    cursor: pointer;
+    margin: 0 0.2rem 0.2rem 0;
+    transition: all 0.15s;
+    text-transform: uppercase;
+  }
+
+  .category-btn:hover { color: var(--phosphor); border-color: var(--phosphor); }
+  .category-btn.active { color: var(--bg); background: var(--phosphor); border-color: var(--phosphor); }
+
+  /* ── CENTER ── */
+  .center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    position: relative;
+  }
+
+  .deck-header {
+    width: 100%;
+    max-width: 600px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+  }
+
+  .deck-counter {
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    color: var(--phosphor-dim);
+  }
+
+  .deck-counter span {
+    color: var(--phosphor);
+    font-family: 'Orbitron', sans-serif;
+  }
+
+  .progress-bar {
+    width: 200px;
+    height: 2px;
+    background: rgba(0,255,136,0.1);
+    position: relative;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--phosphor);
+    box-shadow: 0 0 6px var(--phosphor);
+    transition: width 0.4s ease;
+  }
+
+  /* Card */
+  .card-stage {
+    width: 100%;
+    max-width: 600px;
+    perspective: 1000px;
+    position: relative;
+  }
+
+  .idea-card {
+    background: var(--bg-panel);
+    border: 1px solid var(--phosphor-dim);
+    box-shadow:
+      0 0 20px rgba(0,255,136,0.08),
+      inset 0 0 40px rgba(0,255,136,0.02);
+    padding: 2rem;
+    position: relative;
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s;
+    min-height: 480px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .idea-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--phosphor), transparent);
+    opacity: 0.6;
+  }
+
+  .idea-card.fly-left {
+    transform: translateX(-160%) rotateZ(-12deg);
+    opacity: 0;
+  }
+
+  .idea-card.fly-right {
+    transform: translateX(160%) rotateZ(12deg);
+    opacity: 0;
+  }
+
+  .idea-card.fly-up {
+    transform: translateY(-120%) scale(0.8);
+    opacity: 0;
+  }
+
+  .card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+  }
+
+  .module-name {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 2.2rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    color: var(--phosphor);
+    text-shadow: 0 0 20px rgba(0,255,136,0.6);
+    line-height: 1;
+  }
+
+  .module-tagline {
+    font-size: 0.8rem;
+    color: var(--phosphor-dim);
+    margin-top: 0.4rem;
+    letter-spacing: 0.05em;
+    font-style: italic;
+  }
+
+  .card-meta {
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    align-items: flex-end;
+  }
+
+  .badge {
+    display: inline-block;
+    font-size: 0.6rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 0.2rem 0.5rem;
+    border: 1px solid currentColor;
+  }
+
+  .badge-category { color: var(--amber); border-color: var(--amber-dim); }
+  .badge-hp { color: var(--blue); border-color: #006699; }
+  .badge-body { color: var(--phosphor-dim); border-color: rgba(0,255,136,0.2); }
+
+  .concept-text {
+    font-size: 0.78rem;
+    line-height: 1.7;
+    color: rgba(0,255,136,0.75);
+    margin-bottom: 1.2rem;
+    flex: 1;
+  }
+
+  .key-feature {
+    border-left: 2px solid var(--phosphor);
+    padding: 0.6rem 0.8rem;
+    background: rgba(0,255,136,0.05);
+    margin-bottom: 1.2rem;
+    font-size: 0.72rem;
+    line-height: 1.5;
+    color: var(--phosphor);
+  }
+
+  .key-feature::before {
+    content: '★ KEY FEATURE — ';
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.55rem;
+    letter-spacing: 0.2em;
+    color: var(--phosphor-dim);
+  }
+
+  .io-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0.8rem;
+    margin-bottom: 1rem;
+  }
+
+  .io-group h4 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.5rem;
+    letter-spacing: 0.2em;
+    color: var(--phosphor-dim);
+    text-transform: uppercase;
+    margin-bottom: 0.3rem;
+    border-bottom: 1px solid rgba(0,255,136,0.1);
+    padding-bottom: 0.2rem;
+  }
+
+  .io-item {
+    font-size: 0.62rem;
+    color: rgba(0,255,136,0.6);
+    padding: 0.1rem 0;
+    letter-spacing: 0.05em;
+  }
+
+  .io-item::before {
+    content: '› ';
+    color: var(--phosphor-dim);
+  }
+
+  .inspiration-line {
+    font-size: 0.62rem;
+    color: rgba(0,255,136,0.4);
+    letter-spacing: 0.05em;
+    border-top: 1px solid rgba(0,255,136,0.08);
+    padding-top: 0.8rem;
+    margin-top: auto;
+  }
+
+  .inspiration-line::before {
+    content: 'INSPIRED BY: ';
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.5rem;
+    letter-spacing: 0.2em;
+    color: rgba(0,255,136,0.25);
+  }
+
+  /* Card ID watermark */
+  .card-id {
+    position: absolute;
+    bottom: 0.8rem;
+    right: 1rem;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.5rem;
+    color: rgba(0,255,136,0.15);
+    letter-spacing: 0.2em;
+  }
+
+  /* Rating bar */
+  .rating-bar {
+    width: 100%;
+    max-width: 600px;
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+
+  .rate-btn {
+    flex: 1;
+    background: none;
+    border: 1px solid currentColor;
+    color: var(--phosphor-dim);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    padding: 0.8rem 0;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  .rate-btn:hover {
+    background: rgba(255,255,255,0.05);
+    transform: translateY(-2px);
+  }
+
+  .rate-btn.skip { color: var(--red); border-color: rgba(255,51,68,0.4); }
+  .rate-btn.skip:hover { background: rgba(255,51,68,0.1); box-shadow: 0 0 12px rgba(255,51,68,0.2); }
+
+  .rate-btn.maybe { color: var(--amber); border-color: rgba(255,170,0,0.4); }
+  .rate-btn.maybe:hover { background: rgba(255,170,0,0.1); box-shadow: 0 0 12px rgba(255,170,0,0.2); }
+
+  .rate-btn.build { color: var(--phosphor); border-color: var(--phosphor-dim); }
+  .rate-btn.build:hover {
+    background: rgba(0,255,136,0.12);
+    box-shadow: 0 0 20px rgba(0,255,136,0.25);
+    text-shadow: 0 0 8px var(--phosphor);
+  }
+
+  .rate-btn .key-hint {
+    font-size: 0.55rem;
+    opacity: 0.5;
+    border: 1px solid currentColor;
+    padding: 0.1rem 0.3rem;
+  }
+
+  /* ── RIGHT SIDEBAR ── */
+  .sidebar-right {
+    border-left: 1px solid rgba(0,255,136,0.15);
+    padding: 1.5rem 1rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .sidebar-right h3 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    color: var(--phosphor-dim);
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(0,255,136,0.1);
+    padding-bottom: 0.4rem;
+  }
+
+  .idea-list-item {
+    font-size: 0.65rem;
+    padding: 0.4rem 0.5rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid transparent;
+    transition: all 0.15s;
+    letter-spacing: 0.05em;
+  }
+
+  .idea-list-item:hover { border-color: rgba(0,255,136,0.2); background: rgba(0,255,136,0.03); }
+  .idea-list-item.current { border-color: var(--phosphor); background: var(--phosphor-glow); }
+
+  .idea-list-item .item-name { color: var(--phosphor); }
+  .idea-list-item .item-rating { font-size: 0.7rem; }
+
+  .rating-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
+  .rating-dot.build { background: var(--phosphor); box-shadow: 0 0 6px var(--phosphor); }
+  .rating-dot.maybe { background: var(--amber); }
+  .rating-dot.skip { background: var(--red); }
+  .rating-dot.unrated { background: rgba(0,255,136,0.2); border: 1px solid rgba(0,255,136,0.3); }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 3rem 2rem;
+  }
+
+  .empty-state .big { font-family: 'Orbitron', sans-serif; font-size: 3rem; color: rgba(0,255,136,0.2); margin-bottom: 1rem; }
+  .empty-state p { color: var(--phosphor-dim); font-size: 0.8rem; line-height: 1.8; }
+
+  /* Keyboard hint strip */
+  .kbd-hints {
+    width: 100%;
+    max-width: 600px;
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin-top: 0.75rem;
+    color: rgba(0,255,136,0.25);
+    font-size: 0.6rem;
+    letter-spacing: 0.08em;
+  }
+
+  .kbd-hints span { display: flex; align-items: center; gap: 0.35rem; }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--bg-panel);
+    border: 1px solid var(--phosphor);
+    color: var(--phosphor);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    padding: 0.6rem 1.5rem;
+    z-index: 500;
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 0 20px rgba(0,255,136,0.25);
+    text-transform: uppercase;
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.amber { border-color: var(--amber); color: var(--amber); box-shadow: 0 0 20px rgba(255,170,0,0.2); }
+  .toast.red { border-color: var(--red); color: var(--red); box-shadow: 0 0 20px rgba(255,51,68,0.2); }
+
+  /* Section header with generation timestamp */
+  .gen-badge {
+    font-size: 0.55rem;
+    letter-spacing: 0.12em;
+    color: rgba(0,255,136,0.25);
+    border: 1px solid rgba(0,255,136,0.1);
+    padding: 0.2rem 0.4rem;
+    display: inline-block;
+    margin-top: 0.5rem;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(0,255,136,0.2); }
+  ::-webkit-scrollbar-thumb:hover { background: var(--phosphor-dim); }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="brand">WeirdSynths</a>
+  <a href="modules.html">Modules</a>
+  <a href="guide.html">Guide</a>
+  <a href="ideas.html" class="active">Ideas</a>
+  <a href="weirdos.html">WeirdOS</a>
+  <a href="board.html">Dev Board</a>
+    <a href="../ecosystem/index.html">Ecosystem</a>
+</nav>
+
+<div class="main">
+
+  <!-- LEFT SIDEBAR -->
+  <aside class="sidebar-left">
+    <div class="sidebar-section">
+      <h3>Ratings</h3>
+      <div class="stats-grid">
+        <div class="stat-box active" id="stat-all" onclick="setFilter('all')">
+          <span class="stat-num total" id="count-total">0</span>
+          <span class="stat-label">Total</span>
+        </div>
+        <div class="stat-box" id="stat-unrated" onclick="setFilter('unrated')">
+          <span class="stat-num total" id="count-unrated">0</span>
+          <span class="stat-label">Unrated</span>
+        </div>
+        <div class="stat-box" id="stat-build" onclick="setFilter('build')">
+          <span class="stat-num build" id="count-build">0</span>
+          <span class="stat-label">🔥 Build</span>
+        </div>
+        <div class="stat-box" id="stat-maybe" onclick="setFilter('maybe')">
+          <span class="stat-num maybe" id="count-maybe">0</span>
+          <span class="stat-label">💡 Maybe</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <h3>Filter</h3>
+      <button class="filter-btn active" id="filter-all" onclick="setFilter('all')">All Ideas <span class="count" id="fc-all">0</span></button>
+      <button class="filter-btn" id="filter-unrated" onclick="setFilter('unrated')">Unrated <span class="count" id="fc-unrated">0</span></button>
+      <button class="filter-btn" id="filter-build" onclick="setFilter('build')">🔥 Build This <span class="count" id="fc-build">0</span></button>
+      <button class="filter-btn" id="filter-maybe" onclick="setFilter('maybe')">💡 Interesting <span class="count" id="fc-maybe">0</span></button>
+      <button class="filter-btn" id="filter-skip" onclick="setFilter('skip')">❌ Skipped <span class="count" id="fc-skip">0</span></button>
+    </div>
+
+    <div class="sidebar-section">
+      <h3>Category</h3>
+      <div id="category-buttons"></div>
+    </div>
+
+    <div class="sidebar-section">
+      <h3>Actions</h3>
+      <button class="filter-btn" onclick="exportBuildList()">↓ Export Build List</button>
+      <button class="filter-btn" onclick="resetAll()" style="color: rgba(255,51,68,0.6); border-color: rgba(255,51,68,0.2);">⚠ Reset Ratings</button>
+      <div class="gen-badge" id="gen-date">GEN: —</div>
+    </div>
+  </aside>
+
+  <!-- CENTER -->
+  <main class="center">
+
+    <div class="deck-header">
+      <div class="deck-counter">
+        IDEA <span id="card-current">1</span> / <span id="card-total">0</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+      </div>
+    </div>
+
+    <div class="card-stage" id="card-stage">
+      <div class="idea-card" id="idea-card">
+        <div class="card-header">
+          <div>
+            <div class="module-name" id="card-name">—</div>
+            <div class="module-tagline" id="card-tagline">—</div>
+          </div>
+          <div class="card-meta">
+            <span class="badge badge-category" id="card-category">—</span>
+            <span class="badge badge-hp" id="card-hp">— HP</span>
+            <span class="badge badge-body" id="card-body">—</span>
+          </div>
+        </div>
+
+        <div class="concept-text" id="card-concept">—</div>
+
+        <div class="key-feature" id="card-keyfeature">—</div>
+
+        <div class="io-grid">
+          <div class="io-group">
+            <h4>Inputs</h4>
+            <div id="card-inputs"></div>
+          </div>
+          <div class="io-group">
+            <h4>Outputs</h4>
+            <div id="card-outputs"></div>
+          </div>
+          <div class="io-group">
+            <h4>Params</h4>
+            <div id="card-params"></div>
+          </div>
+        </div>
+
+        <div class="inspiration-line" id="card-inspiration">—</div>
+        <div class="card-id" id="card-id">ID:000</div>
+      </div>
+    </div>
+
+    <div class="rating-bar">
+      <button class="rate-btn skip" onclick="rate('skip')">
+        ❌ Skip
+        <span class="key-hint">←</span>
+      </button>
+      <button class="rate-btn maybe" onclick="rate('maybe')">
+        💡 Interesting
+        <span class="key-hint">↑</span>
+      </button>
+      <button class="rate-btn build" onclick="rate('build')">
+        🔥 Build This
+        <span class="key-hint">→</span>
+      </button>
+    </div>
+
+    <div class="kbd-hints">
+      <span>← Skip &nbsp; → Build &nbsp; ↑ Interesting &nbsp; ↓ Undo</span>
+    </div>
+
+  </main>
+
+  <!-- RIGHT SIDEBAR -->
+  <aside class="sidebar-right">
+    <h3>All Ideas</h3>
+    <div id="idea-list"></div>
+  </aside>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── DATA ──
+let ideas = [];
+let ratings = {};
+let filtered = [];
+let currentIndex = 0;
+let currentFilter = 'all';
+let currentCategory = 'all';
+let history = []; // for undo
+let animating = false;
+
+const STORAGE_KEY = 'weirdsynths-idea-ratings';
+const STORAGE_FILTER = 'weirdsynths-idea-filter';
+
+// Load ideas from JSON
+async function loadIdeas() {
+  try {
+    const resp = await fetch('ideas.json?t=' + Date.now());
+    const data = await resp.json();
+    ideas = data.ideas;
+    document.getElementById('gen-date').textContent = 'GEN: ' + (data.meta?.lastGenerated || '—');
+  } catch(e) {
+    // Fallback: no ideas
+    ideas = [];
+    showToast('Failed to load ideas.json', 'red');
+  }
+
+  // Load saved ratings
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) ratings = JSON.parse(saved);
+  } catch(e) { ratings = {}; }
+
+  init();
+}
+
+function saveRatings() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(ratings));
+}
+
+// ── FILTER ──
+function setFilter(filter) {
+  currentFilter = filter;
+
+  // Update sidebar buttons
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.stat-box').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('filter-' + filter);
+  const stat = document.getElementById('stat-' + filter);
+  if (btn) btn.classList.add('active');
+  if (stat) stat.classList.add('active');
+
+  rebuildFiltered();
+  currentIndex = 0;
+  renderCard();
+  updateSidebar();
+  updateStats();
+}
+
+function setCategoryFilter(cat) {
+  currentCategory = cat;
+  document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('[data-cat="' + cat + '"]')?.classList.add('active');
+  rebuildFiltered();
+  currentIndex = 0;
+  renderCard();
+  updateSidebar();
+}
+
+function rebuildFiltered() {
+  filtered = ideas.filter(idea => {
+    const r = ratings[idea.id];
+    const ratingMatch =
+      currentFilter === 'all' ? true :
+      currentFilter === 'unrated' ? !r :
+      r === currentFilter;
+    const catMatch = currentCategory === 'all' || idea.category === currentCategory;
+    return ratingMatch && catMatch;
+  });
+}
+
+// ── RENDER ──
+function renderCard() {
+  if (filtered.length === 0) {
+    document.getElementById('card-name').textContent = 'ALL DONE';
+    document.getElementById('card-tagline').textContent = 'no ideas in this filter';
+    document.getElementById('card-concept').textContent = 'Change the filter on the left or rate more ideas.';
+    document.getElementById('card-keyfeature').textContent = 'Use the filter sidebar to see rated ideas.';
+    document.getElementById('card-inputs').innerHTML = '';
+    document.getElementById('card-outputs').innerHTML = '';
+    document.getElementById('card-params').innerHTML = '';
+    document.getElementById('card-inspiration').textContent = '';
+    document.getElementById('card-id').textContent = 'ID:---';
+    document.getElementById('card-category').textContent = '—';
+    document.getElementById('card-hp').textContent = '— HP';
+    document.getElementById('card-body').textContent = '—';
+    document.getElementById('card-current').textContent = '0';
+    document.getElementById('card-total').textContent = filtered.length;
+    document.getElementById('progress-fill').style.width = '100%';
+    return;
+  }
+
+  if (currentIndex >= filtered.length) currentIndex = filtered.length - 1;
+  if (currentIndex < 0) currentIndex = 0;
+
+  const idea = filtered[currentIndex];
+
+  document.getElementById('card-name').textContent = idea.name;
+  document.getElementById('card-tagline').textContent = idea.tagline;
+  document.getElementById('card-concept').textContent = idea.concept;
+  document.getElementById('card-keyfeature').textContent = idea.keyFeature;
+  document.getElementById('card-category').textContent = idea.category;
+  document.getElementById('card-hp').textContent = idea.hp + ' HP';
+  document.getElementById('card-body').textContent = idea.bodyPart;
+  document.getElementById('card-inspiration').textContent = idea.inspiration;
+  document.getElementById('card-id').textContent = 'ID:' + idea.id;
+
+  const makeItems = (arr) => arr.map(x => `<div class="io-item">${x}</div>`).join('');
+  document.getElementById('card-inputs').innerHTML = makeItems(idea.inputs);
+  document.getElementById('card-outputs').innerHTML = makeItems(idea.outputs);
+  document.getElementById('card-params').innerHTML = makeItems(idea.params);
+
+  document.getElementById('card-current').textContent = currentIndex + 1;
+  document.getElementById('card-total').textContent = filtered.length;
+
+  const pct = filtered.length > 1 ? ((currentIndex) / (filtered.length - 1)) * 100 : 100;
+  document.getElementById('progress-fill').style.width = pct + '%';
+
+  // Apply current rating visual
+  const r = ratings[idea.id];
+  const card = document.getElementById('idea-card');
+  card.style.borderColor = '';
+  card.style.boxShadow = '';
+  if (r === 'build') {
+    card.style.borderColor = 'var(--phosphor)';
+    card.style.boxShadow = '0 0 30px rgba(0,255,136,0.2)';
+  } else if (r === 'maybe') {
+    card.style.borderColor = 'var(--amber)';
+    card.style.boxShadow = '0 0 20px rgba(255,170,0,0.1)';
+  } else if (r === 'skip') {
+    card.style.borderColor = 'rgba(255,51,68,0.4)';
+    card.style.boxShadow = '';
+  }
+
+  // Update sidebar list highlight
+  updateSidebar();
+}
+
+function animateCard(direction, callback) {
+  if (animating) return;
+  animating = true;
+  const card = document.getElementById('idea-card');
+  const cls = direction === 'left' ? 'fly-left' : direction === 'right' ? 'fly-right' : 'fly-up';
+  card.classList.add(cls);
+  setTimeout(() => {
+    card.classList.remove(cls);
+    card.style.transition = 'none';
+    callback();
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        card.style.transition = '';
+        animating = false;
+      });
+    });
+  }, 340);
+}
+
+// ── RATING ──
+function rate(r) {
+  if (filtered.length === 0) return;
+  const idea = filtered[currentIndex];
+  const prev = ratings[idea.id];
+
+  // Push to undo history
+  history.push({ id: idea.id, prev: prev, index: currentIndex });
+  if (history.length > 50) history.shift();
+
+  ratings[idea.id] = r;
+  saveRatings();
+  updateStats();
+
+  const msgs = {
+    build: ['🔥 Building that!', '🔥 On the roadmap!', '🔥 Let\'s make it!'],
+    maybe: ['💡 Noted.', '💡 Interesting...', '💡 Worth revisiting.'],
+    skip: ['❌ Skipped.', '❌ Not this one.', '❌ Moving on.'],
+  };
+  const cls = r === 'build' ? '' : r === 'maybe' ? 'amber' : 'red';
+  showToast(msgs[r][Math.floor(Math.random() * msgs[r].length)], cls);
+
+  // Animate and advance
+  const dir = r === 'skip' ? 'left' : r === 'build' ? 'right' : 'up';
+  animateCard(dir, () => {
+    // If filter hides rated ideas, remove from filtered
+    if (currentFilter !== 'all' && currentFilter !== r) {
+      rebuildFiltered();
+      if (currentIndex >= filtered.length) currentIndex = filtered.length - 1;
+    } else {
+      if (currentIndex < filtered.length - 1) currentIndex++;
+    }
+    renderCard();
+    updateSidebar();
+  });
+}
+
+function undo() {
+  if (history.length === 0) { showToast('Nothing to undo', 'red'); return; }
+  const { id, prev, index } = history.pop();
+  if (prev === undefined) delete ratings[id];
+  else ratings[id] = prev;
+  saveRatings();
+  rebuildFiltered();
+  currentIndex = Math.min(index, filtered.length - 1);
+  renderCard();
+  updateStats();
+  showToast('↩ Undone');
+}
+
+// ── STATS ──
+function updateStats() {
+  const counts = { build: 0, maybe: 0, skip: 0, unrated: 0, total: ideas.length };
+  ideas.forEach(idea => {
+    const r = ratings[idea.id];
+    if (!r) counts.unrated++;
+    else if (r === 'build') counts.build++;
+    else if (r === 'maybe') counts.maybe++;
+    else if (r === 'skip') counts.skip++;
+  });
+
+  document.getElementById('count-total').textContent = counts.total;
+  document.getElementById('count-unrated').textContent = counts.unrated;
+  document.getElementById('count-build').textContent = counts.build;
+  document.getElementById('count-maybe').textContent = counts.maybe;
+
+  document.getElementById('fc-all').textContent = counts.total;
+  document.getElementById('fc-unrated').textContent = counts.unrated;
+  document.getElementById('fc-build').textContent = counts.build;
+  document.getElementById('fc-maybe').textContent = counts.maybe;
+  document.getElementById('fc-skip').textContent = counts.skip;
+}
+
+// ── SIDEBAR LIST ──
+function updateSidebar() {
+  const list = document.getElementById('idea-list');
+  const currentIdea = filtered[currentIndex];
+  list.innerHTML = '';
+  ideas.forEach((idea, i) => {
+    const r = ratings[idea.id];
+    const isCurrent = currentIdea && idea.id === currentIdea.id;
+    const dot = `<span class="rating-dot ${r || 'unrated'}"></span>`;
+    const emoji = r === 'build' ? '🔥' : r === 'maybe' ? '💡' : r === 'skip' ? '❌' : '·';
+    const el = document.createElement('div');
+    el.className = 'idea-list-item' + (isCurrent ? ' current' : '');
+    el.innerHTML = `<span class="item-name">${idea.name}</span><span class="item-rating">${emoji}</span>`;
+    el.onclick = () => jumpTo(idea.id);
+    list.appendChild(el);
+  });
+}
+
+function jumpTo(id) {
+  // Switch to all filter and find idea
+  setFilter('all');
+  const idx = filtered.findIndex(i => i.id === id);
+  if (idx >= 0) { currentIndex = idx; renderCard(); }
+}
+
+// ── CATEGORY BUTTONS ──
+function buildCategoryButtons() {
+  const cats = ['all', ...new Set(ideas.map(i => i.category))].sort();
+  const container = document.getElementById('category-buttons');
+  cats.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = 'category-btn' + (cat === 'all' ? ' active' : '');
+    btn.setAttribute('data-cat', cat);
+    btn.textContent = cat === 'all' ? 'ALL' : cat;
+    btn.onclick = () => setCategoryFilter(cat);
+    container.appendChild(btn);
+  });
+}
+
+// ── EXPORT ──
+function exportBuildList() {
+  const buildList = ideas.filter(i => ratings[i.id] === 'build');
+  if (buildList.length === 0) { showToast('No ideas marked Build yet', 'amber'); return; }
+  const text = ['# WeirdSynths — Build Roadmap', '', `Generated: ${new Date().toLocaleDateString()}`, '', ...buildList.map(idea =>
+    `## ${idea.name}\n> ${idea.tagline}\n\nCategory: ${idea.category} | HP: ${idea.hp}\n\n${idea.concept}\n\n**Key feature:** ${idea.keyFeature}\n\nInputs: ${idea.inputs.join(', ')}\nOutputs: ${idea.outputs.join(', ')}\nParams: ${idea.params.join(', ')}\n`
+  )].join('\n');
+  const blob = new Blob([text], { type: 'text/markdown' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'weirdsynths-build-roadmap.md';
+  a.click();
+  showToast('Roadmap exported!');
+}
+
+function resetAll() {
+  if (!confirm('Reset all ratings? This cannot be undone.')) return;
+  ratings = {};
+  saveRatings();
+  history = [];
+  init();
+  showToast('All ratings cleared', 'red');
+}
+
+// ── TOAST ──
+let toastTimer;
+function showToast(msg, cls = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (cls ? ' ' + cls : '');
+  void t.offsetWidth; // reflow
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+// ── KEYBOARD ──
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+  switch(e.key) {
+    case 'ArrowLeft':  e.preventDefault(); rate('skip'); break;
+    case 'ArrowRight': e.preventDefault(); rate('build'); break;
+    case 'ArrowUp':    e.preventDefault(); rate('maybe'); break;
+    case 'ArrowDown':  e.preventDefault(); undo(); break;
+    case 'z':          if (e.metaKey || e.ctrlKey) { e.preventDefault(); undo(); } break;
+  }
+});
+
+// ── INIT ──
+function init() {
+  rebuildFiltered();
+  currentIndex = 0;
+  buildCategoryButtons();
+  updateStats();
+  renderCard();
+  updateSidebar();
+}
+
+loadIdeas();
+</script>
+
+</body>
+</html>

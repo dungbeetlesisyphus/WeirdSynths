@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WeirdPhone — iOS Wireframes</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
+
+  :root {
+    --p: #00ff88;
+    --pd: #00a855;
+    --pg: rgba(0,255,136,0.12);
+    --bg: #030a06;
+    --amber: #ffaa00;
+    --red: #ff3344;
+    --blue: #00aaff;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: #0a0a0a;
+    color: var(--p);
+    font-family: 'Share Tech Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem 1rem;
+    gap: 2rem;
+  }
+
+  body::before {
+    content:'';
+    position:fixed;
+    inset:0;
+    background: repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.1) 2px,rgba(0,0,0,0.1) 4px);
+    pointer-events:none;
+    z-index:1000;
+  }
+
+  h1 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.2rem;
+    letter-spacing: 0.3em;
+    text-shadow: 0 0 20px var(--p);
+    text-align: center;
+  }
+
+  .subtitle { font-size: 0.7rem; color: var(--pd); letter-spacing: 0.15em; text-align: center; }
+
+  .screens-row {
+    display: flex;
+    gap: 2.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: flex-start;
+  }
+
+  /* ── PHONE FRAME ── */
+  .phone-wrap { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; }
+
+  .screen-label {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.55rem;
+    letter-spacing: 0.25em;
+    color: var(--pd);
+    text-transform: uppercase;
+  }
+
+  .phone {
+    width: 200px;
+    background: #0b1a0f;
+    border: 2px solid var(--pd);
+    border-radius: 28px;
+    padding: 10px 8px;
+    box-shadow: 0 0 30px rgba(0,255,136,0.1), inset 0 0 20px rgba(0,255,136,0.03);
+    position: relative;
+    cursor: pointer;
+    transition: box-shadow 0.2s;
+  }
+
+  .phone:hover { box-shadow: 0 0 40px rgba(0,255,136,0.2); }
+  .phone.active { border-color: var(--p); box-shadow: 0 0 40px rgba(0,255,136,0.3); }
+
+  /* Notch */
+  .phone::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 50px;
+    height: 8px;
+    background: #0b1a0f;
+    border: 1px solid var(--pd);
+    border-radius: 4px;
+    z-index: 10;
+  }
+
+  .phone-screen {
+    background: #020804;
+    border-radius: 20px;
+    min-height: 380px;
+    overflow: hidden;
+    position: relative;
+    padding: 22px 6px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  /* ── STATUS BAR ── */
+  .status-bar {
+    display: flex;
+    justify-content: space-between;
+    padding: 0 4px;
+    font-size: 0.45rem;
+    color: var(--pd);
+    letter-spacing: 0.1em;
+    margin-bottom: 3px;
+  }
+
+  /* ── NAV BAR ── */
+  .nav-bar {
+    display: flex;
+    justify-content: space-around;
+    padding: 5px 0 3px;
+    border-top: 1px solid rgba(0,255,136,0.15);
+    margin-top: auto;
+  }
+
+  .nav-btn {
+    font-size: 0.4rem;
+    letter-spacing: 0.08em;
+    color: var(--pd);
+    text-align: center;
+    padding: 2px 4px;
+    cursor: pointer;
+    border-bottom: 1px solid transparent;
+    transition: all 0.15s;
+  }
+
+  .nav-btn.active { color: var(--p); border-bottom-color: var(--p); text-shadow: 0 0 6px var(--p); }
+
+  .nav-icon { font-size: 0.65rem; display: block; margin-bottom: 1px; }
+
+  /* ── SCREEN TITLE ── */
+  .screen-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-align: center;
+    color: var(--p);
+    text-shadow: 0 0 8px var(--p);
+    padding: 2px 0;
+    border-bottom: 1px solid rgba(0,255,136,0.15);
+    margin-bottom: 4px;
+  }
+
+  /* ── FACE VIEW (TRACK screen) ── */
+  .face-view {
+    width: 100%;
+    height: 130px;
+    border: 1px solid var(--pd);
+    background: #010a04;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 5px;
+    border-radius: 4px;
+  }
+
+  .face-wireframe {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 70px;
+    height: 90px;
+  }
+
+  .face-circle {
+    position: absolute;
+    border-radius: 50%;
+    border: 1px solid rgba(0,255,136,0.4);
+  }
+
+  .landmark-dot {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    border-radius: 50%;
+    background: var(--p);
+    box-shadow: 0 0 3px var(--p);
+  }
+
+  .scan-line {
+    position: absolute;
+    left: 0; right: 0;
+    height: 1px;
+    background: rgba(0,255,136,0.3);
+    animation: scan 2s linear infinite;
+  }
+
+  @keyframes scan {
+    0% { top: 0; opacity: 1; }
+    100% { top: 100%; opacity: 0; }
+  }
+
+  .face-label {
+    position: absolute;
+    bottom: 4px;
+    right: 5px;
+    font-size: 0.38rem;
+    color: var(--pd);
+    letter-spacing: 0.1em;
+  }
+
+  /* ── CV METERS ── */
+  .meters-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3px;
+  }
+
+  .meter-row {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+
+  .meter-label {
+    font-size: 0.38rem;
+    color: var(--pd);
+    letter-spacing: 0.05em;
+    width: 38px;
+    flex-shrink: 0;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  .meter-bar {
+    flex: 1;
+    height: 4px;
+    background: rgba(0,255,136,0.08);
+    border: 1px solid rgba(0,255,136,0.15);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .meter-fill {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    background: var(--p);
+    box-shadow: 0 0 4px var(--p);
+    transition: width 0.1s;
+  }
+
+  .meter-val {
+    font-size: 0.35rem;
+    color: var(--p);
+    width: 20px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  /* ── CONNECTION DOT ── */
+  .conn-badge {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 0.38rem;
+    color: var(--p);
+    padding: 2px 5px;
+    border: 1px solid rgba(0,255,136,0.2);
+    align-self: flex-start;
+    margin-bottom: 3px;
+  }
+
+  .conn-dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--p);
+    box-shadow: 0 0 5px var(--p);
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* ── CONNECT SCREEN ── */
+  .input-field {
+    border: 1px solid rgba(0,255,136,0.3);
+    background: rgba(0,255,136,0.04);
+    padding: 4px 6px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.5rem;
+    color: var(--p);
+    width: 100%;
+    letter-spacing: 0.05em;
+    margin-bottom: 3px;
+  }
+
+  .field-label {
+    font-size: 0.4rem;
+    color: var(--pd);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+
+  .proto-pills {
+    display: flex;
+    gap: 3px;
+    margin-bottom: 5px;
+  }
+
+  .proto-pill {
+    flex: 1;
+    text-align: center;
+    font-size: 0.42rem;
+    letter-spacing: 0.08em;
+    padding: 3px 2px;
+    border: 1px solid rgba(0,255,136,0.2);
+    color: var(--pd);
+  }
+
+  .proto-pill.active {
+    background: var(--pg);
+    border-color: var(--p);
+    color: var(--p);
+  }
+
+  .ping-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 3px 4px;
+    border: 1px solid rgba(0,255,136,0.1);
+    margin-bottom: 3px;
+  }
+
+  .ping-label { font-size: 0.4rem; color: var(--pd); letter-spacing: 0.08em; }
+  .ping-val { font-size: 0.5rem; color: var(--p); font-family: 'Orbitron', sans-serif; }
+
+  .big-btn {
+    width: 100%;
+    background: var(--pg);
+    border: 1px solid var(--p);
+    color: var(--p);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.52rem;
+    letter-spacing: 0.2em;
+    padding: 6px;
+    text-align: center;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  /* ── MAP SCREEN ── */
+  .map-row {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 0;
+    border-bottom: 1px solid rgba(0,255,136,0.05);
+  }
+
+  .map-source {
+    font-size: 0.38rem;
+    color: var(--p);
+    width: 45px;
+    flex-shrink: 0;
+  }
+
+  .map-arrow {
+    font-size: 0.45rem;
+    color: var(--pd);
+    flex-shrink: 0;
+  }
+
+  .map-dest {
+    font-size: 0.38rem;
+    color: var(--amber);
+    flex: 1;
+    border-bottom: 1px solid rgba(255,170,0,0.3);
+  }
+
+  .map-range {
+    font-size: 0.33rem;
+    color: var(--pd);
+    width: 22px;
+    text-align: right;
+  }
+
+  /* ── PRESETS SCREEN ── */
+  .preset-card {
+    border: 1px solid rgba(0,255,136,0.15);
+    padding: 4px 6px;
+    margin-bottom: 3px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+  }
+
+  .preset-card.active { border-color: var(--p); background: var(--pg); }
+  .preset-name { font-size: 0.45rem; color: var(--p); letter-spacing: 0.08em; }
+  .preset-meta { font-size: 0.35rem; color: var(--pd); text-align: right; }
+  .preset-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--p); box-shadow: 0 0 4px var(--p); }
+
+  /* ── SETTINGS SCREEN ── */
+  .setting-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(0,255,136,0.06);
+  }
+
+  .setting-name { font-size: 0.42rem; color: var(--pd); letter-spacing: 0.06em; }
+
+  .setting-val {
+    font-size: 0.45rem;
+    color: var(--p);
+    font-family: 'Orbitron', sans-serif;
+  }
+
+  .toggle {
+    width: 22px; height: 12px;
+    border: 1px solid var(--pd);
+    border-radius: 6px;
+    position: relative;
+    background: rgba(0,255,136,0.05);
+  }
+
+  .toggle.on { border-color: var(--p); background: rgba(0,255,136,0.15); }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    top: 1px; left: 1px;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--pd);
+    transition: left 0.2s;
+  }
+  .toggle.on::after { left: 11px; background: var(--p); box-shadow: 0 0 4px var(--p); }
+
+  .fps-pills { display: flex; gap: 2px; }
+  .fps-pill {
+    font-size: 0.38rem;
+    padding: 1px 4px;
+    border: 1px solid rgba(0,255,136,0.15);
+    color: var(--pd);
+    cursor: pointer;
+  }
+  .fps-pill.active { border-color: var(--p); color: var(--p); background: var(--pg); }
+
+  /* ── PRO BADGE ── */
+  .pro-badge {
+    display: inline-block;
+    font-size: 0.35rem;
+    letter-spacing: 0.1em;
+    padding: 1px 3px;
+    border: 1px solid var(--amber);
+    color: var(--amber);
+    vertical-align: middle;
+    margin-left: 3px;
+  }
+
+  /* ── EXPANDED DETAIL ── */
+  .detail-panel {
+    max-width: 700px;
+    width: 100%;
+    border: 1px solid rgba(0,255,136,0.2);
+    padding: 1.5rem;
+    background: rgba(0,255,136,0.02);
+  }
+
+  .detail-panel h2 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.25em;
+    color: var(--p);
+    margin-bottom: 1rem;
+    border-bottom: 1px solid rgba(0,255,136,0.15);
+    padding-bottom: 0.5rem;
+  }
+
+  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+  .detail-section h3 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.55rem;
+    letter-spacing: 0.2em;
+    color: var(--pd);
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+  }
+
+  .detail-section p, .detail-section li {
+    font-size: 0.65rem;
+    color: rgba(0,255,136,0.7);
+    line-height: 1.7;
+  }
+
+  .detail-section ul { padding-left: 1rem; }
+
+  .blendshape-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.3rem;
+  }
+
+  .bs-chip {
+    font-size: 0.5rem;
+    padding: 0.2rem 0.3rem;
+    border: 1px solid rgba(0,255,136,0.15);
+    color: var(--pd);
+    text-align: center;
+    letter-spacing: 0.03em;
+  }
+
+  .bs-chip.free { border-color: var(--p); color: var(--p); background: var(--pg); }
+
+  /* ── TIER COMPARISON ── */
+  .tier-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 0.5rem;
+    padding: 0.4rem 0;
+    border-bottom: 1px solid rgba(0,255,136,0.06);
+    font-size: 0.62rem;
+  }
+
+  .tier-row.header { color: var(--pd); font-size: 0.55rem; letter-spacing: 0.1em; }
+  .tier-row .check { text-align: center; }
+  .tier-row .check.yes { color: var(--p); }
+  .tier-row .check.no { color: rgba(255,255,255,0.15); }
+  .tier-row .check.pro { color: var(--amber); }
+</style>
+</head>
+<body>
+
+<h1>WEIRDPHONE</h1>
+<p class="subtitle">iOS APP — INTERACTIVE WIREFRAMES v0.1</p>
+
+<div class="screens-row">
+
+  <!-- SCREEN 1: TRACK -->
+  <div class="phone-wrap">
+    <div class="screen-label">01 — TRACK</div>
+    <div class="phone active">
+      <div class="phone-screen">
+        <div class="status-bar">
+          <span>9:41</span>
+          <span>WEIRDPHONE</span>
+          <span>●●●●</span>
+        </div>
+        <div class="screen-title">TRACK</div>
+
+        <div class="conn-badge">
+          <div class="conn-dot"></div>
+          <span>192.168.1.42:9000</span>
+        </div>
+
+        <!-- Face view -->
+        <div class="face-view">
+          <div class="scan-line"></div>
+          <!-- Landmark dots scattered to suggest face -->
+          <div class="landmark-dot" style="top:30%;left:35%"></div>
+          <div class="landmark-dot" style="top:30%;left:65%"></div>
+          <div class="landmark-dot" style="top:38%;left:32%"></div>
+          <div class="landmark-dot" style="top:38%;left:68%"></div>
+          <div class="landmark-dot" style="top:45%;left:50%"></div>
+          <div class="landmark-dot" style="top:55%;left:40%"></div>
+          <div class="landmark-dot" style="top:55%;left:50%"></div>
+          <div class="landmark-dot" style="top:55%;left:60%"></div>
+          <div class="landmark-dot" style="top:65%;left:35%"></div>
+          <div class="landmark-dot" style="top:65%;left:65%"></div>
+          <div class="landmark-dot" style="top:72%;left:50%"></div>
+          <div class="landmark-dot" style="top:22%;left:48%"></div>
+          <div class="landmark-dot" style="top:22%;left:53%"></div>
+          <!-- Oval outline -->
+          <div class="face-circle" style="top:20%;left:30%;width:42%;height:65%;"></div>
+          <div class="face-label">52 LANDMARKS · 60fps · NEURAL ENGINE</div>
+        </div>
+
+        <!-- CV meters 2-column -->
+        <div class="meters-grid">
+          <div class="meter-row">
+            <div class="meter-label">JAW OPEN</div>
+            <div class="meter-bar"><div class="meter-fill" style="width:23%"></div></div>
+            <div class="meter-val">.23</div>
+          </div>
+          <div class="meter-row">
+            <div class="meter-label">SMILE L</div>
+            <div class="meter-bar"><div class="meter-fill" style="width:67%"></div></div>
+            <div class="meter-val">.67</div>
+          </div>
+          <div class="meter-row">
+            <div class="meter-label">BROW UP</div>
+            <div class="meter-bar"><div class="meter-fill" style="width:45%"></div></div>
+            <div class="meter-val">.45</div>
+          </div>
+          <div class="meter-row">
+            <div class="meter-label">SMILE R</div>
+            <div class="meter-bar"><div class="meter-fill" style="width:71%"></div></div>
+            <div class="meter-val">.71</div>
+          </div>
+          <div class="meter-row">
+            <div class="meter-label">EYE BLINK L</div>
+            <div class="meter-bar"><div class="meter-fill" style="width:5%"></div></div>
+            <div class="meter-val">.05</div>
+          </div>
+          <div class="meter-row">
+            <div class="meter-label">EYE BLINK R</div>
+            <div class="meter-bar"><div class="meter-fill" style="width:4%"></div></div>
+            <div class="meter-val">.04</div>
+          </div>
+          <div class="meter-row">
+            <div class="meter-label">HEAD PITCH</div>
+            <div class="meter-bar"><div class="meter-fill" style="width:52%;background:var(--amber);box-shadow:0 0 4px var(--amber)"></div></div>
+            <div class="meter-val" style="color:var(--amber)">.52</div>
+          </div>
+          <div class="meter-row">
+            <div class="meter-label">HEAD YAW</div>
+            <div class="meter-bar"><div class="meter-fill" style="width:38%;background:var(--amber);box-shadow:0 0 4px var(--amber)"></div></div>
+            <div class="meter-val" style="color:var(--amber)">.38</div>
+          </div>
+        </div>
+
+        <!-- Nav -->
+        <div class="nav-bar">
+          <div class="nav-btn active"><span class="nav-icon">◉</span>TRACK</div>
+          <div class="nav-btn"><span class="nav-icon">⌁</span>CONNECT</div>
+          <div class="nav-btn"><span class="nav-icon">⊞</span>MAP</div>
+          <div class="nav-btn"><span class="nav-icon">◈</span>PRESETS</div>
+          <div class="nav-btn"><span class="nav-icon">⚙</span>SETTINGS</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN 2: CONNECT -->
+  <div class="phone-wrap">
+    <div class="screen-label">02 — CONNECT</div>
+    <div class="phone">
+      <div class="phone-screen">
+        <div class="status-bar">
+          <span>9:41</span>
+          <span>WEIRDPHONE</span>
+          <span>●●●●</span>
+        </div>
+        <div class="screen-title">CONNECT</div>
+
+        <div class="field-label">PROTOCOL</div>
+        <div class="proto-pills">
+          <div class="proto-pill active">UDP</div>
+          <div class="proto-pill">OSC</div>
+          <div class="proto-pill">MIDI<span class="pro-badge">PRO</span></div>
+        </div>
+
+        <div class="field-label">DESTINATION IP</div>
+        <div class="input-field">192.168.1.42</div>
+
+        <div class="field-label">PORT</div>
+        <div class="input-field">9000</div>
+
+        <div class="ping-row">
+          <span class="ping-label">LATENCY</span>
+          <span class="ping-val">7ms</span>
+        </div>
+        <div class="ping-row">
+          <span class="ping-label">PACKETS/SEC</span>
+          <span class="ping-val">60</span>
+        </div>
+        <div class="ping-row">
+          <span class="ping-label">STATUS</span>
+          <span class="ping-val" style="color:var(--p)">STREAMING</span>
+        </div>
+
+        <div style="margin-top:5px; padding: 4px 5px; border: 1px solid rgba(0,255,136,0.1); font-size: 0.38rem; color: var(--pd);">
+          <div style="color: var(--pd); margin-bottom: 3px; letter-spacing: 0.1em; font-size: 0.37rem;">AUTO-DISCOVERED</div>
+          <div style="color: var(--p); padding: 2px 0; border-bottom: 1px solid rgba(0,255,136,0.08);">▸ NERVE @ 192.168.1.42</div>
+          <div style="color: rgba(0,255,136,0.4); padding: 2px 0;">▸ TouchDesigner @ 192.168.1.55</div>
+        </div>
+
+        <div class="big-btn">▸ CONNECT</div>
+
+        <div class="nav-bar">
+          <div class="nav-btn"><span class="nav-icon">◉</span>TRACK</div>
+          <div class="nav-btn active"><span class="nav-icon">⌁</span>CONNECT</div>
+          <div class="nav-btn"><span class="nav-icon">⊞</span>MAP</div>
+          <div class="nav-btn"><span class="nav-icon">◈</span>PRESETS</div>
+          <div class="nav-btn"><span class="nav-icon">⚙</span>SETTINGS</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN 3: MAP -->
+  <div class="phone-wrap">
+    <div class="screen-label">03 — MAP <span class="pro-badge">PRO</span></div>
+    <div class="phone">
+      <div class="phone-screen">
+        <div class="status-bar">
+          <span>9:41</span>
+          <span>WEIRDPHONE</span>
+          <span>●●●●</span>
+        </div>
+        <div class="screen-title">MAP <span class="pro-badge">PRO</span></div>
+
+        <div style="font-size:0.38rem; color:var(--pd); margin-bottom:4px; letter-spacing:0.1em;">SOURCE → OUTPUT JACK · SCALE</div>
+
+        <div class="map-row">
+          <div class="map-source">jawOpen</div>
+          <div class="map-arrow">→</div>
+          <div class="map-dest">OUT 01</div>
+          <div class="map-range">0–10V</div>
+        </div>
+        <div class="map-row">
+          <div class="map-source">smileL</div>
+          <div class="map-arrow">→</div>
+          <div class="map-dest">OUT 02</div>
+          <div class="map-range">0–5V</div>
+        </div>
+        <div class="map-row">
+          <div class="map-source">browInner</div>
+          <div class="map-arrow">→</div>
+          <div class="map-dest">OUT 03</div>
+          <div class="map-range">0–10V</div>
+        </div>
+        <div class="map-row">
+          <div class="map-source">headYaw</div>
+          <div class="map-arrow">→</div>
+          <div class="map-dest">OUT 04</div>
+          <div class="map-range">±5V</div>
+        </div>
+        <div class="map-row">
+          <div class="map-source">eyeBlinkL</div>
+          <div class="map-arrow">→</div>
+          <div class="map-dest">TRIG 01</div>
+          <div class="map-range">GATE</div>
+        </div>
+        <div class="map-row">
+          <div class="map-source">eyeBlinkR</div>
+          <div class="map-arrow">→</div>
+          <div class="map-dest">TRIG 02</div>
+          <div class="map-range">GATE</div>
+        </div>
+        <div class="map-row">
+          <div class="map-source">tongueOut</div>
+          <div class="map-arrow">→</div>
+          <div class="map-dest">OUT 05</div>
+          <div class="map-range">0–10V</div>
+        </div>
+        <div class="map-row" style="opacity:0.4">
+          <div class="map-source">cheekPuff</div>
+          <div class="map-arrow">→</div>
+          <div class="map-dest">— none —</div>
+          <div class="map-range"></div>
+        </div>
+
+        <div style="font-size:0.38rem; color:var(--pd); margin-top:4px; border-top:1px solid rgba(0,255,136,0.1); padding-top:3px;">
+          52 BLENDSHAPES + 12 POSE AVAILABLE
+        </div>
+
+        <div class="nav-bar">
+          <div class="nav-btn"><span class="nav-icon">◉</span>TRACK</div>
+          <div class="nav-btn"><span class="nav-icon">⌁</span>CONNECT</div>
+          <div class="nav-btn active"><span class="nav-icon">⊞</span>MAP</div>
+          <div class="nav-btn"><span class="nav-icon">◈</span>PRESETS</div>
+          <div class="nav-btn"><span class="nav-icon">⚙</span>SETTINGS</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN 4: PRESETS -->
+  <div class="phone-wrap">
+    <div class="screen-label">04 — PRESETS</div>
+    <div class="phone">
+      <div class="phone-screen">
+        <div class="status-bar">
+          <span>9:41</span>
+          <span>WEIRDPHONE</span>
+          <span>●●●●</span>
+        </div>
+        <div class="screen-title">PRESETS</div>
+
+        <div class="preset-card active">
+          <div>
+            <div class="preset-name">Home Studio</div>
+            <div class="preset-meta">UDP · 192.168.1.42:9000 · 60fps</div>
+          </div>
+          <div class="preset-dot"></div>
+        </div>
+
+        <div class="preset-card">
+          <div>
+            <div class="preset-name">Live Rig</div>
+            <div class="preset-meta">UDP · 10.0.0.1:9000 · 30fps</div>
+          </div>
+          <div style="width:5px;height:5px;border-radius:50%;background:rgba(0,255,136,0.2);border:1px solid var(--pd)"></div>
+        </div>
+
+        <div class="preset-card">
+          <div>
+            <div class="preset-name">Ableton via MIDI</div>
+            <div class="preset-meta" style="color:var(--amber)">MIDI · Network Session · PRO</div>
+          </div>
+          <div style="width:5px;height:5px;border-radius:50%;background:rgba(255,170,0,0.2);border:1px solid var(--amber)"></div>
+        </div>
+
+        <div class="preset-card">
+          <div>
+            <div class="preset-name">TouchDesigner</div>
+            <div class="preset-meta" style="color:var(--amber)">OSC · 192.168.1.55:8000 · PRO</div>
+          </div>
+          <div style="width:5px;height:5px;border-radius:50%;background:rgba(255,170,0,0.2);border:1px solid var(--amber)"></div>
+        </div>
+
+        <div style="margin-top:5px; border: 1px dashed rgba(0,255,136,0.15); padding: 6px; text-align: center; font-size: 0.42rem; color: var(--pd); letter-spacing: 0.1em;">
+          + NEW PRESET
+        </div>
+
+        <div class="nav-bar">
+          <div class="nav-btn"><span class="nav-icon">◉</span>TRACK</div>
+          <div class="nav-btn"><span class="nav-icon">⌁</span>CONNECT</div>
+          <div class="nav-btn"><span class="nav-icon">⊞</span>MAP</div>
+          <div class="nav-btn active"><span class="nav-icon">◈</span>PRESETS</div>
+          <div class="nav-btn"><span class="nav-icon">⚙</span>SETTINGS</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN 5: SETTINGS -->
+  <div class="phone-wrap">
+    <div class="screen-label">05 — SETTINGS</div>
+    <div class="phone">
+      <div class="phone-screen">
+        <div class="status-bar">
+          <span>9:41</span>
+          <span>WEIRDPHONE</span>
+          <span>●●●●</span>
+        </div>
+        <div class="screen-title">SETTINGS</div>
+
+        <div class="setting-row">
+          <span class="setting-name">SEND RATE</span>
+          <div class="fps-pills">
+            <div class="fps-pill">10</div>
+            <div class="fps-pill">30</div>
+            <div class="fps-pill active">60</div>
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <span class="setting-name">SMOOTHING</span>
+          <span class="setting-val">12ms</span>
+        </div>
+
+        <div class="setting-row">
+          <span class="setting-name">BACKGROUND MODE</span>
+          <div class="toggle on"></div>
+        </div>
+
+        <div class="setting-row">
+          <span class="setting-name">SHOW LANDMARKS</span>
+          <div class="toggle on"></div>
+        </div>
+
+        <div class="setting-row">
+          <span class="setting-name">HAPTIC FEEDBACK</span>
+          <div class="toggle"></div>
+        </div>
+
+        <div class="setting-row">
+          <span class="setting-name">SCALE OUTPUTS</span>
+          <span class="setting-val" style="font-size:0.42rem">0-10V</span>
+        </div>
+
+        <div style="margin-top:6px; padding: 4px; border: 1px solid rgba(0,255,136,0.15); text-align:center;">
+          <div style="font-size: 0.38rem; color: var(--pd); margin-bottom: 3px; letter-spacing: 0.1em;">CALIBRATE NEUTRAL POSE</div>
+          <div style="font-size: 0.42rem; color: var(--p); border: 1px solid rgba(0,255,136,0.3); padding: 3px; letter-spacing: 0.1em;">▸ SET BASELINE</div>
+        </div>
+
+        <div style="margin-top:4px; padding: 4px; border: 1px solid rgba(255,170,0,0.2); background: rgba(255,170,0,0.03);">
+          <div style="font-size:0.38rem; color: var(--amber); letter-spacing: 0.1em; margin-bottom: 2px;">WEIRDPHONE PRO</div>
+          <div style="font-size:0.35rem; color: rgba(255,170,0,0.6);">All 64 CVs · OSC · MIDI · Map · Presets</div>
+          <div style="font-size:0.42rem; color: var(--amber); margin-top: 2px; text-align: center; border: 1px solid rgba(255,170,0,0.3); padding: 2px;">UNLOCK $9.99</div>
+        </div>
+
+        <div class="nav-bar">
+          <div class="nav-btn"><span class="nav-icon">◉</span>TRACK</div>
+          <div class="nav-btn"><span class="nav-icon">⌁</span>CONNECT</div>
+          <div class="nav-btn"><span class="nav-icon">⊞</span>MAP</div>
+          <div class="nav-btn"><span class="nav-icon">◈</span>PRESETS</div>
+          <div class="nav-btn active"><span class="nav-icon">⚙</span>SETTINGS</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL PANEL -->
+<div class="detail-panel">
+  <h2>FREE vs PRO — FEATURE BREAKDOWN</h2>
+  <div class="tier-row header">
+    <span>Feature</span>
+    <span style="text-align:center">FREE</span>
+    <span style="text-align:center;color:var(--amber)">PRO $9.99</span>
+  </div>
+  <div class="tier-row"><span>8 core CVs (jaw, smile, blink, head)</span><span class="check yes">✓</span><span class="check yes">✓</span></div>
+  <div class="tier-row"><span>UDP streaming to VCV NERVE</span><span class="check yes">✓</span><span class="check yes">✓</span></div>
+  <div class="tier-row"><span>Auto-discovery of NERVE modules</span><span class="check yes">✓</span><span class="check yes">✓</span></div>
+  <div class="tier-row"><span>Live face preview with landmarks</span><span class="check yes">✓</span><span class="check yes">✓</span></div>
+  <div class="tier-row"><span>Calibrate neutral pose</span><span class="check yes">✓</span><span class="check yes">✓</span></div>
+  <div class="tier-row"><span>All 52 ARKit blendshapes</span><span class="check no">—</span><span class="check pro">✓</span></div>
+  <div class="tier-row"><span>Head pose 6DOF (pitch/yaw/roll/xyz)</span><span class="check no">—</span><span class="check pro">✓</span></div>
+  <div class="tier-row"><span>Eye gaze direction (L+R)</span><span class="check no">—</span><span class="check pro">✓</span></div>
+  <div class="tier-row"><span>OSC streaming output</span><span class="check no">—</span><span class="check pro">✓</span></div>
+  <div class="tier-row"><span>Network MIDI / CoreMIDI</span><span class="check no">—</span><span class="check pro">✓</span></div>
+  <div class="tier-row"><span>Custom MAP screen (blendshape routing)</span><span class="check no">—</span><span class="check pro">✓</span></div>
+  <div class="tier-row"><span>Saved connection PRESETS</span><span class="check no">—</span><span class="check pro">✓</span></div>
+  <div class="tier-row"><span>Background streaming (screen locked)</span><span class="check no">—</span><span class="check pro">✓</span></div>
+</div>
+
+<div class="detail-panel">
+  <h2>ALL 52 ARKIT BLENDSHAPES</h2>
+  <div class="blendshape-grid">
+    <div class="bs-chip free">jawOpen</div>
+    <div class="bs-chip free">smileLeft</div>
+    <div class="bs-chip free">smileRight</div>
+    <div class="bs-chip free">browInnerUp</div>
+    <div class="bs-chip free">eyeBlinkL</div>
+    <div class="bs-chip free">eyeBlinkR</div>
+    <div class="bs-chip free">headPitch</div>
+    <div class="bs-chip free">headYaw</div>
+    <div class="bs-chip">jawForward</div>
+    <div class="bs-chip">jawLeft</div>
+    <div class="bs-chip">jawRight</div>
+    <div class="bs-chip">mouthClose</div>
+    <div class="bs-chip">mouthFunnel</div>
+    <div class="bs-chip">mouthPucker</div>
+    <div class="bs-chip">mouthLeft</div>
+    <div class="bs-chip">mouthRight</div>
+    <div class="bs-chip">mouthFrownL</div>
+    <div class="bs-chip">mouthFrownR</div>
+    <div class="bs-chip">mouthDimpleL</div>
+    <div class="bs-chip">mouthDimpleR</div>
+    <div class="bs-chip">mouthStretchL</div>
+    <div class="bs-chip">mouthStretchR</div>
+    <div class="bs-chip">mouthRollLow</div>
+    <div class="bs-chip">mouthRollUp</div>
+    <div class="bs-chip">mouthShrugL</div>
+    <div class="bs-chip">mouthShrugU</div>
+    <div class="bs-chip">mouthPressL</div>
+    <div class="bs-chip">mouthPressR</div>
+    <div class="bs-chip">mouthLowDnL</div>
+    <div class="bs-chip">mouthLowDnR</div>
+    <div class="bs-chip">mouthUpUpL</div>
+    <div class="bs-chip">mouthUpUpR</div>
+    <div class="bs-chip">browDownL</div>
+    <div class="bs-chip">browDownR</div>
+    <div class="bs-chip">browOuterUL</div>
+    <div class="bs-chip">browOuterUR</div>
+    <div class="bs-chip">eyeLookDnL</div>
+    <div class="bs-chip">eyeLookInL</div>
+    <div class="bs-chip">eyeLookOutL</div>
+    <div class="bs-chip">eyeLookUpL</div>
+    <div class="bs-chip">eyeLookDnR</div>
+    <div class="bs-chip">eyeLookInR</div>
+    <div class="bs-chip">eyeLookOutR</div>
+    <div class="bs-chip">eyeLookUpR</div>
+    <div class="bs-chip">eyeSquintL</div>
+    <div class="bs-chip">eyeSquintR</div>
+    <div class="bs-chip">eyeWideL</div>
+    <div class="bs-chip">eyeWideR</div>
+    <div class="bs-chip">cheekPuff</div>
+    <div class="bs-chip">cheekSquintL</div>
+    <div class="bs-chip">cheekSquintR</div>
+    <div class="bs-chip">noseSneerL</div>
+    <div class="bs-chip">tongueOut</div>
+  </div>
+  <div style="margin-top:0.75rem; font-size:0.6rem; color:var(--pd)">
+    <span style="display:inline-block;width:10px;height:10px;border:1px solid var(--p);background:var(--pg);vertical-align:middle;margin-right:4px;"></span>Free tier (8 CVs) &nbsp;&nbsp;
+    <span style="display:inline-block;width:10px;height:10px;border:1px solid rgba(0,255,136,0.2);vertical-align:middle;margin-right:4px;"></span>Pro tier (all 52 + 12 pose/gaze)
+  </div>
+</div>
+
+<p style="font-size:0.55rem; color:rgba(0,255,136,0.25); letter-spacing:0.1em; text-align:center; margin-top:1rem;">
+  WEIRDPHONE v0.1 WIREFRAMES · WEIRDSYNTHS · iOS ONLY · ARKIT TRUEDETTH
+</p>
+
+</body>
+</html>

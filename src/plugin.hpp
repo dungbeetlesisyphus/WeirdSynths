@@ -11,3 +11,4 @@ extern Model* modelNerve;
 extern Model* modelSkull;
 extern Model* modelMirror;
 extern Model* modelVoice;
+extern Model* modelDepth;
