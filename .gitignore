@@ -23,3 +23,9 @@ __pycache__/
 .venv/
 venv/
 bridge/face_landmarker.task
+
+# Planning docs (kept in Google Drive, not version control)
+ecosystem/
+weirdphone/
+WeirdSynths_MasterPlan.docx
+*.plan.md
