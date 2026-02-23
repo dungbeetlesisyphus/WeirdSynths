@@ -305,18 +305,81 @@ struct HiHatVoice {
 };
 
 // ═════════════════════════════════════════════════════════
-// SKULL DRUM ENGINE — all 4 voices + stereo mix
+// CRASH CYMBAL — triggered by tongue
+// ═════════════════════════════════════════════════════════
+struct CrashVoice {
+    DecayEnvelope ampEnv;
+    NoiseGen noise;
+    SVFilter filt;
+    SVFilter filt2;
+    float phases[4] = {};
+    float velocity = 1.f;
+
+    void trigger(float vel = 1.f) {
+        velocity = vel;
+        ampEnv.trigger(vel);
+        filt.reset();
+        filt2.reset();
+    }
+
+    float process(float kit, float decay, float tone, float sampleRate) {
+        // Crash has a long decay
+        float decayTime = 0.5f + decay * 2.f;
+        ampEnv.setDecay(decayTime, sampleRate);
+
+        float amp = ampEnv.process();
+        float out;
+
+        if (kit < 0.33f) {
+            // Analog: dense metallic partials
+            const float freqs[4] = {340.f, 460.f, 587.f, 720.f};
+            float sum = 0.f;
+            for (int i = 0; i < 4; i++) {
+                phases[i] += freqs[i] * (0.9f + tone * 0.2f) / sampleRate;
+                if (phases[i] > 1.f) phases[i] -= 1.f;
+                sum += (phases[i] < 0.5f ? 1.f : -1.f);
+            }
+            // Mix metallic + noise
+            float n = noise.next();
+            float cutoff = 5000.f + tone * 7000.f;
+            filt.process(sum / 4.f + n * 0.5f, cutoff, 1.5f, sampleRate);
+            out = filt.band * 0.4f + filt.high * 0.6f;
+        } else if (kit < 0.66f) {
+            // Digital: washed out bit-crushed shimmer
+            float n = noise.next();
+            float cutoff = 4000.f + tone * 8000.f;
+            filt.process(n, cutoff, 2.f, sampleRate);
+            out = bitCrush(filt.high, 6.f + tone * 3.f);
+        } else {
+            // Physical: resonant plate-like
+            float n = noise.next();
+            float cutoff = 3000.f + tone * 9000.f;
+            filt.process(n, cutoff, 6.f + tone * 4.f, sampleRate);
+            filt2.process(filt.band, cutoff * 1.5f, 3.f, sampleRate);
+            out = filt.band * 0.3f + filt2.band * 0.3f + filt.high * 0.4f;
+        }
+
+        return softClip(out * amp * 5.f);
+    }
+
+    bool isActive() const { return ampEnv.isActive(); }
+};
+
+// ═════════════════════════════════════════════════════════
+// SKULL DRUM ENGINE — all 5 voices + stereo mix
 // ═════════════════════════════════════════════════════════
 struct DrumEngine {
     KickVoice kick;
     SnareVoice snare;
     HiHatVoice closedHat;
     HiHatVoice openHat;
+    CrashVoice crash;
 
     GestureTrigger kickTrig;
     GestureTrigger snareTrig;
     GestureTrigger chTrig;
     GestureTrigger ohTrig;
+    GestureTrigger crashTrig;
 
     float mixL = 0.f;
     float mixR = 0.f;
@@ -324,64 +387,55 @@ struct DrumEngine {
     float snareOut = 0.f;
     float chOut = 0.f;
     float ohOut = 0.f;
+    float crashOut = 0.f;
 
     // Process one sample
     // faceData values are 0-1 normalized
     void process(
         float blinkL, float blinkR, float jaw, float browL, float browR,
         float mouthW, float headX, float headY, float expression,
+        float tongue,
         float kit, float sensitivity, float decay, float tone, float pan, float level,
         float sampleRate
     ) {
-        float thresh = 1.f - sensitivity; // Higher sensitivity = lower threshold
+        float thresh = 1.f - sensitivity;
 
         // Detect triggers from face gestures
-        // Kick: either eye blink
         float blinkVal = std::max(blinkL, blinkR);
         bool kickFired = kickTrig.process(blinkVal, thresh);
-
-        // Snare: jaw opening
         bool snareFired = snareTrig.process(jaw, thresh);
-
-        // Closed hat: left brow raise
         bool chFired = chTrig.process(browL, thresh);
-
-        // Open hat: right brow raise
         bool ohFired = ohTrig.process(browR, thresh);
+        // Tongue blendshape is much weaker — use half threshold
+        bool crashFired = crashTrig.process(tongue, thresh * 0.3f);
 
-        // Velocity from expression intensity
         float vel = 0.5f + expression * 0.5f;
 
         if (kickFired) kick.trigger(vel);
         if (snareFired) snare.trigger(vel);
         if (chFired) closedHat.trigger(vel);
-        if (ohFired) {
-            openHat.trigger(vel);
-            // Open hat chokes closed hat (like real hats)
-            // closedHat.ampEnv.value = 0.f;
-        }
+        if (ohFired) openHat.trigger(vel);
+        if (crashFired) crash.trigger(vel);
 
         // Snare decay modulated by mouth width
         float snareDec = decay + mouthW * 0.5f;
 
-        // Process voices
-        kickOut = kick.process(kit, decay, tone, sampleRate);
-        snareOut = snare.process(kit, snareDec, tone, sampleRate);
-        chOut = closedHat.process(kit, decay, tone, false, sampleRate);
-        ohOut = openHat.process(kit, decay, tone, true, sampleRate);
+        // Process voices — skip inactive voices for CPU savings
+        kickOut = kick.isActive() ? kick.process(kit, decay, tone, sampleRate) : 0.f;
+        snareOut = snare.isActive() ? snare.process(kit, snareDec, tone, sampleRate) : 0.f;
+        chOut = closedHat.isActive() ? closedHat.process(kit, decay, tone, false, sampleRate) : 0.f;
+        ohOut = openHat.isActive() ? openHat.process(kit, decay, tone, true, sampleRate) : 0.f;
+        crashOut = crash.isActive() ? crash.process(kit, decay, tone, sampleRate) : 0.f;
 
         // Stereo mix with head-controlled panning
-        float panAmount = headX * 0.5f + pan; // Head X adds to manual pan
-        panAmount = rack::math::clamp(panAmount, -1.f, 1.f);
-
+        float panAmount = rack::math::clamp(headX * 0.5f + pan, -1.f, 1.f);
         float panL = std::cos((panAmount + 1.f) * 0.25f * M_PI);
         float panR = std::sin((panAmount + 1.f) * 0.25f * M_PI);
 
-        // Kick center, snare slightly right, hats spread
-        mixL = (kickOut * 0.5f + snareOut * 0.45f * panL + chOut * 0.7f * panL + ohOut * 0.3f * panL) * level;
-        mixR = (kickOut * 0.5f + snareOut * 0.55f * panR + chOut * 0.3f * panR + ohOut * 0.7f * panR) * level;
+        // Kick center, snare slightly right, hats spread, crash wide
+        mixL = (kickOut * 0.5f + snareOut * 0.45f * panL + chOut * 0.7f * panL + ohOut * 0.3f * panL + crashOut * 0.6f * panL) * level;
+        mixR = (kickOut * 0.5f + snareOut * 0.55f * panR + chOut * 0.3f * panR + ohOut * 0.7f * panR + crashOut * 0.4f * panR) * level;
 
-        // Soft clip the mix
         mixL = softClip(mixL);
         mixR = softClip(mixR);
     }

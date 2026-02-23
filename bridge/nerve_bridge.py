@@ -13,12 +13,12 @@ Sends to all specified ports simultaneously (default: 9000 for NERVE, 9001 for S
 
 First run downloads the face_landmarker model (~4MB) automatically.
 
-Protocol: 84-byte packets
+Protocol v2: 100-byte packets
     Bytes 0-3:   Magic "NERV"
-    Bytes 4-5:   Protocol version (uint16, little-endian) = 1
+    Bytes 4-5:   Protocol version (uint16, little-endian) = 2
     Bytes 6-7:   Face count (uint16, little-endian) = 1
-    Bytes 8-75:  17 floats (float32, little-endian) = face data
-    Bytes 76-83: Timestamp (uint64, little-endian) in microseconds
+    Bytes 8-91:  21 floats (float32, little-endian) = face data
+    Bytes 92-99: Timestamp (uint64, little-endian) in microseconds
 """
 
 import argparse
@@ -82,6 +82,7 @@ BLENDSHAPE_NAMES = {
     'mouthRight': None,
     'mouthStretchLeft': None,
     'mouthStretchRight': None,
+    'tongueOut': None,
 }
 
 
@@ -91,12 +92,12 @@ def get_blendshape_dict(blendshapes) -> dict:
 
 
 def extract_features(blendshapes: dict, landmarks, prev_head=None) -> dict:
-    """Extract 17 NERVE features from blendshapes and landmarks.
+    """Extract 21 NERVE features from blendshapes and landmarks.
 
     Blendshapes give us precise facial expressions (0-1 scores).
     Landmarks give us head position and distance.
 
-    Returns dict matching NERVE protocol order.
+    Returns dict matching NERVE protocol v2 order (17 original + 4 new).
     """
     # ── Head pose from landmarks ──
     # Nose tip is landmark 1, used for head position
@@ -201,6 +202,11 @@ def extract_features(blendshapes: dict, landmarks, prev_head=None) -> dict:
         0.0, 1.0
     ))
 
+    # ── Tongue from blendshapes ──
+    # tongueOut blendshape is weak — boost 3x for usable range
+    tongue_raw = blendshapes.get('tongueOut', 0.0)
+    tongue = float(np.clip(tongue_raw * 3.0, 0.0, 1.0))
+
     return {
         'headX': float(head_x),
         'headY': float(head_y),
@@ -219,16 +225,21 @@ def extract_features(blendshapes: dict, landmarks, prev_head=None) -> dict:
         'blinkL': blink_l,
         'blinkR': blink_r,
         'expression': expression,
+        # v2 additions
+        'tongue': tongue,
+        'browInnerUp': float(np.clip(brow_inner_up, 0.0, 1.0)),
+        'browDownL': float(np.clip(brow_down_l, 0.0, 1.0)),
+        'browDownR': float(np.clip(brow_down_r, 0.0, 1.0)),
     }
 
 
 def pack_nerve_packet(features: dict) -> bytes:
-    """Pack face features into 84-byte NERVE protocol packet."""
+    """Pack face features into 100-byte NERVE protocol v2 packet."""
     magic = b'NERV'
-    version = struct.pack('<H', 1)
+    version = struct.pack('<H', 2)
     face_count = struct.pack('<H', 1)
 
-    floats = struct.pack('<17f',
+    floats = struct.pack('<21f',
         features['headX'],
         features['headY'],
         features['headZ'],
@@ -246,6 +257,10 @@ def pack_nerve_packet(features: dict) -> bytes:
         features['blinkL'],
         features['blinkR'],
         features['expression'],
+        features['tongue'],
+        features['browInnerUp'],
+        features['browDownL'],
+        features['browDownR'],
     )
 
     timestamp = struct.pack('<Q', int(time.time() * 1_000_000))
@@ -284,6 +299,37 @@ def draw_landmarks_on_frame(frame, landmarks, w, h):
                  (int(p1.x * w), int(p1.y * h)),
                  (int(p2.x * w), int(p2.y * h)),
                  (120, 80, 255), 1)
+
+
+def draw_feature_overlay(frame, features, w, h):
+    """Draw real-time feature bars and labels on the preview."""
+    bar_x = w - 140
+    bar_w = 120
+    bar_h = 10
+    y_start = 20
+    spacing = 18
+
+    items = [
+        ('BrowL',     features['browL'],     (180, 120, 255)),
+        ('BrowR',     features['browR'],     (180, 120, 255)),
+        ('BrowUp',    features['browInnerUp'], (220, 160, 255)),
+        ('BrowDnL',   features['browDownL'],  (140, 80, 200)),
+        ('BrowDnR',   features['browDownR'],  (140, 80, 200)),
+        ('Tongue',    features['tongue'],     (255, 100, 100)),
+        ('Jaw',       features['jaw'],        (100, 200, 255)),
+        ('Expr',      features['expression'], (100, 255, 200)),
+    ]
+
+    for i, (label, val, color) in enumerate(items):
+        y = y_start + i * spacing
+        # Background bar
+        cv2.rectangle(frame, (bar_x, y), (bar_x + bar_w, y + bar_h), (40, 40, 40), -1)
+        # Value bar
+        fill_w = int(val * bar_w)
+        cv2.rectangle(frame, (bar_x, y), (bar_x + fill_w, y + bar_h), color, -1)
+        # Label
+        cv2.putText(frame, label, (bar_x - 60, y + bar_h - 1),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.35, (200, 200, 200), 1)
 
 
 def main():
@@ -389,14 +435,16 @@ def main():
                     print(f"\r  {actual_fps:.0f} fps | "
                           f"head({features['headX']:+.2f},{features['headY']:+.2f}) "
                           f"eyes({features['leftEye']:.2f},{features['rightEye']:.2f}) "
+                          f"brow({features['browL']:.2f},{features['browR']:.2f}) "
                           f"mouth({features['mouthW']:.2f},{features['mouthH']:.2f}) "
-                          f"jaw({features['jaw']:.2f}) "
+                          f"tongue({features['tongue']:.2f}) "
                           f"blink({'L' if features['blinkL'] else '-'}{'R' if features['blinkR'] else '-'})",
                           end='', flush=True)
 
-                # Draw landmarks if showing preview
+                # Draw landmarks and feature overlays if showing preview
                 if args.show:
                     draw_landmarks_on_frame(frame, landmarks, w, h)
+                    draw_feature_overlay(frame, features, w, h)
             else:
                 if args.show:
                     cv2.putText(frame, "No face detected", (20, 40),

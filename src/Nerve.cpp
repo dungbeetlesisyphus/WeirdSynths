@@ -40,6 +40,10 @@ struct Nerve : Module {
         BROW_R_OUTPUT,
         BLINK_OUTPUT,
         EXPR_OUTPUT,
+        TONGUE_OUTPUT,
+        BROW_INNER_UP_OUTPUT,
+        BROW_DOWN_L_OUTPUT,
+        BROW_DOWN_R_OUTPUT,
 
         ASYM_OUTPUT,
         INTNS_OUTPUT,
@@ -66,7 +70,7 @@ struct Nerve : Module {
         LIGHTS_LEN
     };
 
-    static constexpr int NUM_RAW_OUTPUTS = 16;
+    static constexpr int NUM_RAW_OUTPUTS = 20;
 
     nerve::FaceDataBuffer faceDataBuffer;
     nerve::UDPListener udpListener{&faceDataBuffer};
@@ -113,6 +117,10 @@ struct Nerve : Module {
         configOutput(BROW_R_OUTPUT, "Right Brow");
         configOutput(BLINK_OUTPUT,  "Blink Trigger");
         configOutput(EXPR_OUTPUT,   "Expression");
+        configOutput(TONGUE_OUTPUT, "Tongue");
+        configOutput(BROW_INNER_UP_OUTPUT, "Brow Inner Up");
+        configOutput(BROW_DOWN_L_OUTPUT,   "Brow Down Left");
+        configOutput(BROW_DOWN_R_OUTPUT,   "Brow Down Right");
 
         configOutput(ASYM_OUTPUT,    "Asymmetry");
         configOutput(INTNS_OUTPUT,   "Intensity");
@@ -190,6 +198,10 @@ struct Nerve : Module {
             targets[BROW_R_OUTPUT]  = face.browR * 10.f;
             targets[BLINK_OUTPUT]   = 0.f;
             targets[EXPR_OUTPUT]    = face.expression * 10.f;
+            targets[TONGUE_OUTPUT]  = face.tongue * 10.f;
+            targets[BROW_INNER_UP_OUTPUT] = face.browInnerUp * 10.f;
+            targets[BROW_DOWN_L_OUTPUT]   = face.browDownL * 10.f;
+            targets[BROW_DOWN_R_OUTPUT]   = face.browDownR * 10.f;
         } else {
             for (int i = 0; i < NUM_RAW_OUTPUTS; i++) {
                 targets[i] = 0.f;
@@ -309,6 +321,10 @@ struct NerveWidget : ModuleWidget {
         y = 254.f;
         addOutput(createOutputCentered<PJ301MPort>(Vec(LEFT, y), module, Nerve::BLINK_OUTPUT));
         addOutput(createOutputCentered<PJ301MPort>(Vec(RIGHT, y), module, Nerve::EXPR_OUTPUT));
+
+        y = 278.f;
+        addOutput(createOutputCentered<PJ301MPort>(Vec(LEFT, y), module, Nerve::TONGUE_OUTPUT));
+        addOutput(createOutputCentered<PJ301MPort>(Vec(RIGHT, y), module, Nerve::BROW_INNER_UP_OUTPUT));
 
         y = 298.f;
         addParam(createParamCentered<RoundSmallBlackKnob>(Vec(COL2, y), module, Nerve::SMOOTH_PARAM));

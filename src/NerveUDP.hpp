@@ -32,6 +32,7 @@ namespace nerve {
 // ─────────────────────────────────────────────────────────
 
 struct FaceData {
+    // v1 fields (17 floats)
     float headX   = 0.f;
     float headY   = 0.f;
     float headZ   = 0.f;
@@ -49,6 +50,12 @@ struct FaceData {
     float blinkL = 0.f;
     float blinkR = 0.f;
     float expression = 0.f;
+    // v2 fields (4 additional floats)
+    float tongue = 0.f;
+    float browInnerUp = 0.f;
+    float browDownL = 0.f;
+    float browDownR = 0.f;
+
     uint64_t timestamp = 0;
     int faceCount = 0;
     bool valid = false;
@@ -87,18 +94,17 @@ struct FaceDataBuffer {
 // ─────────────────────────────────────────────────────────
 
 static const char NERVE_MAGIC[4] = {'N', 'E', 'R', 'V'};
-static const uint16_t NERVE_PROTOCOL_VERSION = 1;
 static const int NERVE_HEADER_SIZE = 8;
-static const int NERVE_FACE_BLOCK_SIZE = 68;
-static const int NERVE_MIN_PACKET_SIZE = 84;
+static const int NERVE_V1_PACKET_SIZE = 84;   // 17 floats
+static const int NERVE_V2_PACKET_SIZE = 100;  // 21 floats
 
 inline bool parsePacket(const char* buf, int len, FaceData& out) {
-    if (len < NERVE_MIN_PACKET_SIZE) return false;
+    if (len < NERVE_V1_PACKET_SIZE) return false;
     if (std::memcmp(buf, NERVE_MAGIC, 4) != 0) return false;
 
     uint16_t version;
     std::memcpy(&version, buf + 4, 2);
-    if (version != NERVE_PROTOCOL_VERSION) return false;
+    if (version < 1 || version > 2) return false;
 
     uint16_t faceCount;
     std::memcpy(&faceCount, buf + 6, 2);
@@ -112,6 +118,7 @@ inline bool parsePacket(const char* buf, int len, FaceData& out) {
         return val;
     };
 
+    // v1 fields (17 floats, offsets 0-67)
     out.headX      = rack::math::clamp(readFloat(0),  -1.f, 1.f);
     out.headY      = rack::math::clamp(readFloat(4),  -1.f, 1.f);
     out.headZ      = rack::math::clamp(readFloat(8),  -1.f, 1.f);
@@ -130,7 +137,21 @@ inline bool parsePacket(const char* buf, int len, FaceData& out) {
     out.blinkR     = readFloat(60) > 0.5f ? 1.f : 0.f;
     out.expression = rack::math::clamp(readFloat(64),  0.f, 1.f);
 
-    std::memcpy(&out.timestamp, faceBlock + 68, 8);
+    // v2 fields (4 additional floats, offsets 68-83)
+    if (version >= 2 && len >= NERVE_V2_PACKET_SIZE) {
+        out.tongue     = rack::math::clamp(readFloat(68),  0.f, 1.f);
+        out.browInnerUp = rack::math::clamp(readFloat(72), 0.f, 1.f);
+        out.browDownL  = rack::math::clamp(readFloat(76),  0.f, 1.f);
+        out.browDownR  = rack::math::clamp(readFloat(80),  0.f, 1.f);
+        std::memcpy(&out.timestamp, faceBlock + 84, 8);
+    } else {
+        out.tongue = 0.f;
+        out.browInnerUp = 0.f;
+        out.browDownL = 0.f;
+        out.browDownR = 0.f;
+        std::memcpy(&out.timestamp, faceBlock + 68, 8);
+    }
+
     out.faceCount = faceCount;
     out.valid = true;
 

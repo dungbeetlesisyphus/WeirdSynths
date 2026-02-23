@@ -32,6 +32,7 @@ struct Skull : Module {
         SNARE_OUTPUT,
         CH_OUTPUT,
         OH_OUTPUT,
+        CRASH_OUTPUT,
         MIX_L_OUTPUT,
         MIX_R_OUTPUT,
         OUTPUTS_LEN
@@ -44,6 +45,7 @@ struct Skull : Module {
         SNARE_LIGHT,
         CH_LIGHT,
         OH_LIGHT,
+        CRASH_LIGHT,
         LIGHTS_LEN
     };
 
@@ -64,6 +66,7 @@ struct Skull : Module {
     float snareLightVal = 0.f;
     float chLightVal = 0.f;
     float ohLightVal = 0.f;
+    float crashLightVal = 0.f;
 
 
     Skull() {
@@ -87,6 +90,7 @@ struct Skull : Module {
         configOutput(SNARE_OUTPUT, "Snare");
         configOutput(CH_OUTPUT, "Closed Hi-Hat");
         configOutput(OH_OUTPUT, "Open Hi-Hat");
+        configOutput(CRASH_OUTPUT, "Crash Cymbal");
         configOutput(MIX_L_OUTPUT, "Mix Left");
         configOutput(MIX_R_OUTPUT, "Mix Right");
 
@@ -151,12 +155,14 @@ struct Skull : Module {
         float headX = faceValid ? face.headX : 0.f;
         float headY = faceValid ? face.headY : 0.f;
         float expression = faceValid ? face.expression : 0.5f;
+        float tongue = faceValid ? face.tongue : 0.f;
 
         // Process drums
         if (!muted) {
             drums.process(
                 blinkL, blinkR, jaw, browL, browR,
                 mouthW, headX, headY, expression,
+                tongue,
                 kit, sensitivity, decay, tone, pan, level,
                 args.sampleRate
             );
@@ -165,6 +171,7 @@ struct Skull : Module {
             drums.snareOut = 0.f;
             drums.chOut = 0.f;
             drums.ohOut = 0.f;
+            drums.crashOut = 0.f;
             drums.mixL = 0.f;
             drums.mixR = 0.f;
         }
@@ -174,6 +181,7 @@ struct Skull : Module {
         outputs[SNARE_OUTPUT].setVoltage(drums.snareOut);
         outputs[CH_OUTPUT].setVoltage(drums.chOut);
         outputs[OH_OUTPUT].setVoltage(drums.ohOut);
+        outputs[CRASH_OUTPUT].setVoltage(drums.crashOut);
         outputs[MIX_L_OUTPUT].setVoltage(drums.mixL * 5.f);
         outputs[MIX_R_OUTPUT].setVoltage(drums.mixR * 5.f);
 
@@ -184,17 +192,20 @@ struct Skull : Module {
             if (std::abs(drums.snareOut) > 0.1f) snareLightVal = 1.f;
             if (std::abs(drums.chOut) > 0.1f) chLightVal = 1.f;
             if (std::abs(drums.ohOut) > 0.1f) ohLightVal = 1.f;
+            if (std::abs(drums.crashOut) > 0.1f) crashLightVal = 1.f;
 
             float lightDecay = 0.85f;
             kickLightVal *= lightDecay;
             snareLightVal *= lightDecay;
             chLightVal *= lightDecay;
             ohLightVal *= lightDecay;
+            crashLightVal *= lightDecay;
 
             lights[KICK_LIGHT].setBrightness(kickLightVal);
             lights[SNARE_LIGHT].setBrightness(snareLightVal);
             lights[CH_LIGHT].setBrightness(chLightVal);
             lights[OH_LIGHT].setBrightness(ohLightVal);
+            lights[CRASH_LIGHT].setBrightness(crashLightVal);
 
             lights[CAM_GREEN_LIGHT].setSmoothBrightness(
                 faceValid ? 1.f : 0.f, args.sampleTime * 256);
@@ -260,11 +271,12 @@ struct SkullWidget : ModuleWidget {
         addOutput(createOutputCentered<PJ301MPort>(Vec(COL2, y), module, Skull::OH_OUTPUT));
         addChild(createLightCentered<SmallLight<RedLight>>(Vec(COL2 + 16, y - 10), module, Skull::OH_LIGHT));
 
-        // Stereo mix outputs
-        y = 170.f;
-        addOutput(createOutputCentered<PJ301MPort>(Vec(COL3, y), module, Skull::MIX_L_OUTPUT));
+        y = 230.f;
+        addOutput(createOutputCentered<PJ301MPort>(Vec(COL1, y), module, Skull::CRASH_OUTPUT));
+        addChild(createLightCentered<SmallLight<RedLight>>(Vec(COL1 + 16, y - 10), module, Skull::CRASH_LIGHT));
 
-        y = 200.f;
+        // Stereo mix outputs
+        addOutput(createOutputCentered<PJ301MPort>(Vec(COL2, y), module, Skull::MIX_L_OUTPUT));
         addOutput(createOutputCentered<PJ301MPort>(Vec(COL3, y), module, Skull::MIX_R_OUTPUT));
 
         // Controls row 1: KIT, SENS, DECAY
