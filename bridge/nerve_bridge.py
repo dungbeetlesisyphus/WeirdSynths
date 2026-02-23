@@ -7,9 +7,9 @@ to NERVE module on localhost:9000.
 
 Usage:
     pip install mediapipe opencv-python
-    python nerve_bridge.py [--port 9000] [--port 9001] [--camera 0] [--show]
+    python nerve_bridge.py [--port 9000] [--port 9001] [--port 9002] [--camera 0] [--show]
 
-Sends to all specified ports simultaneously (default: 9000 for NERVE, 9001 for SKULL).
+Sends to all specified ports simultaneously (default: 9000 for NERVE, 9001 for SKULL, 9002 for MIRROR).
 
 First run downloads the face_landmarker model (~4MB) automatically.
 
@@ -334,7 +334,7 @@ def draw_feature_overlay(frame, features, w, h):
 
 def main():
     parser = argparse.ArgumentParser(description='NERVE Bridge — Face to VCV Rack')
-    parser.add_argument('--port', type=int, nargs='+', default=[9000, 9001],
+    parser.add_argument('--port', type=int, nargs='+', default=[9000, 9001, 9002],
                         help='UDP port(s) to send to (default: 9000 9001)')
     parser.add_argument('--host', type=str, default='127.0.0.1', help='Target host (default: 127.0.0.1)')
     parser.add_argument('--camera', type=int, default=0, help='Camera index (default: 0)')

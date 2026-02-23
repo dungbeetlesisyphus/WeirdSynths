@@ -8,4 +8,5 @@ void init(Plugin* p) {
     // Register modules
     p->addModel(modelNerve);
     p->addModel(modelSkull);
+    p->addModel(modelMirror);
 }

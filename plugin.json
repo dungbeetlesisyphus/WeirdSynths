@@ -33,6 +33,16 @@
         "Controller",
         "External"
       ]
+    },
+    {
+      "slug": "Mirror",
+      "name": "MIRROR",
+      "description": "Dot matrix CRT face display — see your face rendered in green phosphor",
+      "tags": [
+        "Visual",
+        "External",
+        "Utility"
+      ]
     }
   ]
 }
