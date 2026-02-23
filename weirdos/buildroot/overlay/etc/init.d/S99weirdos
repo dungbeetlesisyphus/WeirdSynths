@@ -1,0 +1,121 @@
+#!/bin/bash
+# ═══════════════════════════════════════════════════════════
+# WeirdOS v0.1.0 — System startup
+# Launches bridge + VCV Rack as a dedicated synth appliance
+# ═══════════════════════════════════════════════════════════
+
+WEIRDOS_CONF="/etc/weirdos/weirdos.conf"
+WEIRDOS_USER="weird"
+WEIRDOS_HOME="/home/weird"
+LOG_DIR="/var/log/weirdos"
+
+# Source configuration
+[ -f "$WEIRDOS_CONF" ] && source "$WEIRDOS_CONF"
+
+# Defaults
+CAMERA_DEVICE="${CAMERA_DEVICE:-/dev/video0}"
+BRIDGE_PORT="${BRIDGE_PORT:-9000}"
+AUDIO_DEVICE="${AUDIO_DEVICE:-hw:0}"
+JACK_SAMPLERATE="${JACK_SAMPLERATE:-48000}"
+JACK_BUFSIZE="${JACK_BUFSIZE:-256}"
+DISPLAY_MODE="${DISPLAY_MODE:-wayland}"
+
+case "$1" in
+    start)
+        echo "╔══════════════════════════════════╗"
+        echo "║  WeirdOS v0.1.0 — Starting up    ║"
+        echo "╚══════════════════════════════════╝"
+
+        mkdir -p "$LOG_DIR"
+
+        # ── Step 1: Configure audio ──
+        echo "[weirdos] Configuring audio..."
+
+        # Set ALSA defaults
+        if [ -f /etc/asound.conf ]; then
+            echo "[weirdos] ALSA configured"
+        fi
+
+        # Start JACK server
+        echo "[weirdos] Starting JACK (rate=${JACK_SAMPLERATE}, buf=${JACK_BUFSIZE})..."
+        su -l "$WEIRDOS_USER" -c \
+            "jackd -d alsa -d ${AUDIO_DEVICE} -r ${JACK_SAMPLERATE} -p ${JACK_BUFSIZE} -n 2 &" \
+            > "$LOG_DIR/jack.log" 2>&1
+        sleep 2
+
+        # ── Step 2: Wait for camera ──
+        echo "[weirdos] Waiting for camera at ${CAMERA_DEVICE}..."
+        CAMERA_TIMEOUT=30
+        CAMERA_WAIT=0
+        while [ ! -e "$CAMERA_DEVICE" ] && [ $CAMERA_WAIT -lt $CAMERA_TIMEOUT ]; do
+            sleep 1
+            CAMERA_WAIT=$((CAMERA_WAIT + 1))
+        done
+
+        if [ -e "$CAMERA_DEVICE" ]; then
+            echo "[weirdos] Camera found: ${CAMERA_DEVICE}"
+
+            # ── Step 3: Start the face tracking bridge ──
+            echo "[weirdos] Starting face tracking bridge..."
+            su -l "$WEIRDOS_USER" -c \
+                "weirdsynths-bridge --device ${CAMERA_DEVICE} --port ${BRIDGE_PORT} &" \
+                > "$LOG_DIR/bridge.log" 2>&1
+            sleep 1
+        else
+            echo "[weirdos] WARNING: No camera found after ${CAMERA_TIMEOUT}s"
+            echo "[weirdos] VCV Rack will start without face tracking"
+        fi
+
+        # ── Step 4: Start Weston compositor ──
+        if [ "$DISPLAY_MODE" = "wayland" ]; then
+            echo "[weirdos] Starting Weston compositor..."
+            su -l "$WEIRDOS_USER" -c \
+                "weston --tty=1 --backend=drm-backend.so &" \
+                > "$LOG_DIR/weston.log" 2>&1
+            sleep 2
+            export WAYLAND_DISPLAY=wayland-0
+        fi
+
+        # ── Step 5: Launch VCV Rack ──
+        echo "[weirdos] Launching VCV Rack..."
+        su -l "$WEIRDOS_USER" -c \
+            "WAYLAND_DISPLAY=wayland-0 vcvrack" \
+            > "$LOG_DIR/vcvrack.log" 2>&1 &
+
+        echo "[weirdos] ✓ WeirdOS is running"
+        echo "[weirdos] Bridge: UDP port ${BRIDGE_PORT}"
+        echo "[weirdos] Audio: JACK @ ${JACK_SAMPLERATE}Hz / ${JACK_BUFSIZE} frames"
+        ;;
+
+    stop)
+        echo "[weirdos] Shutting down..."
+        killall -SIGTERM Rack 2>/dev/null
+        sleep 1
+        killall -SIGTERM python3 2>/dev/null
+        killall -SIGTERM jackd 2>/dev/null
+        killall -SIGTERM weston 2>/dev/null
+        echo "[weirdos] Stopped"
+        ;;
+
+    restart)
+        $0 stop
+        sleep 2
+        $0 start
+        ;;
+
+    status)
+        echo "═══ WeirdOS Status ═══"
+        echo -n "VCV Rack:  "; pgrep -x Rack > /dev/null && echo "RUNNING" || echo "STOPPED"
+        echo -n "Bridge:    "; pgrep -f "bridge.py" > /dev/null && echo "RUNNING" || echo "STOPPED"
+        echo -n "JACK:      "; pgrep -x jackd > /dev/null && echo "RUNNING" || echo "STOPPED"
+        echo -n "Weston:    "; pgrep -x weston > /dev/null && echo "RUNNING" || echo "STOPPED"
+        echo -n "Camera:    "; [ -e "${CAMERA_DEVICE:-/dev/video0}" ] && echo "DETECTED" || echo "NOT FOUND"
+        ;;
+
+    *)
+        echo "Usage: $0 {start|stop|restart|status}"
+        exit 1
+        ;;
+esac
+
+exit 0

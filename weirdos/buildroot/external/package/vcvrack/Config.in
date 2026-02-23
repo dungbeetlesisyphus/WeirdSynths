@@ -1,0 +1,17 @@
+config BR2_PACKAGE_VCVRACK
+	bool "vcvrack"
+	depends on BR2_TOOLCHAIN_HAS_THREADS_NPTL
+	depends on BR2_INSTALL_LIBSTDCPP
+	depends on BR2_PACKAGE_GLEW
+	depends on BR2_PACKAGE_GLFW
+	depends on BR2_PACKAGE_JANSSON
+	depends on BR2_PACKAGE_LIBCURL
+	depends on BR2_PACKAGE_LIBSAMPLERATE
+	depends on BR2_PACKAGE_LIBZIP
+	depends on BR2_PACKAGE_SPEEXDSP
+	depends on BR2_PACKAGE_ZSTD
+	help
+	  VCV Rack 2 — open-source virtual Eurorack modular synthesizer.
+	  https://github.com/VCVRack/Rack
+
+	  This builds the free/open-source version of VCV Rack 2.

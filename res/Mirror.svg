@@ -42,8 +42,9 @@
   <!-- Status label area -->
   <text class="label-sm" x="20.32" y="57">STATUS</text>
 
-  <!-- Lower controls -->
-  <text class="label" x="10.5" y="115">PORT</text>
+  <!-- Lower controls — BLANK / FREEZE / CAM -->
+  <text class="label" x="10.5" y="115">BLANK</text>
+  <text class="label" x="20.32" y="115">FRZ</text>
   <text class="label" x="30.14" y="115">CAM</text>
 
 </svg>

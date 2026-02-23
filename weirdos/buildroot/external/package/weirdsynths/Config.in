@@ -1,0 +1,7 @@
+config BR2_PACKAGE_WEIRDSYNTHS
+	bool "weirdsynths"
+	depends on BR2_PACKAGE_VCVRACK
+	help
+	  WeirdSynths VCV Rack plugin — NERVE, SKULL, MIRROR, VOICE.
+	  Face tracking and vocal analysis modules.
+	  https://github.com/dungbeetlesisyphus/WeirdSynths

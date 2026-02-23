@@ -1,0 +1,81 @@
+#!/bin/bash
+# ═══════════════════════════════════════════════════════════
+# weirdos — CLI tool for managing the WeirdOS appliance
+# ═══════════════════════════════════════════════════════════
+
+VERSION="0.1.0"
+
+case "$1" in
+    status)
+        /etc/init.d/S99weirdos status
+        ;;
+    start)
+        /etc/init.d/S99weirdos start
+        ;;
+    stop)
+        /etc/init.d/S99weirdos stop
+        ;;
+    restart)
+        /etc/init.d/S99weirdos restart
+        ;;
+    config)
+        ${EDITOR:-nano} /etc/weirdos/weirdos.conf
+        echo "Configuration updated. Run 'weirdos restart' to apply changes."
+        ;;
+    log|logs)
+        if [ -n "$2" ]; then
+            cat "/var/log/weirdos/$2.log" 2>/dev/null || echo "No log: $2"
+        else
+            echo "═══ Available logs ═══"
+            ls /var/log/weirdos/ 2>/dev/null || echo "No logs yet"
+            echo ""
+            echo "Usage: weirdos log [jack|bridge|vcvrack|weston]"
+        fi
+        ;;
+    camera)
+        echo "═══ Camera Info ═══"
+        if [ -e /dev/video0 ]; then
+            v4l2-ctl --device=/dev/video0 --all 2>/dev/null | head -20
+        else
+            echo "No camera detected at /dev/video0"
+            echo "Available video devices:"
+            ls /dev/video* 2>/dev/null || echo "  (none)"
+        fi
+        ;;
+    audio)
+        echo "═══ Audio Info ═══"
+        echo "ALSA devices:"
+        aplay -l 2>/dev/null | grep "^card" || echo "  (none)"
+        echo ""
+        echo "JACK status:"
+        jack_lsp 2>/dev/null || echo "  JACK not running"
+        ;;
+    version)
+        echo "WeirdOS v${VERSION}"
+        echo "VCV Rack: $(vcvrack --version 2>/dev/null || echo 'not installed')"
+        echo "Bridge:   $(python3 -c 'import bridge; print(bridge.__version__)' 2>/dev/null || echo '2.0.0')"
+        echo "Kernel:   $(uname -r)"
+        echo "Platform: $(uname -m)"
+        ;;
+    help|--help|-h)
+        echo "WeirdOS v${VERSION} — Face tracking modular synth appliance"
+        echo ""
+        echo "Usage: weirdos <command>"
+        echo ""
+        echo "Commands:"
+        echo "  status    Show status of all services"
+        echo "  start     Start VCV Rack + bridge"
+        echo "  stop      Stop all services"
+        echo "  restart   Restart everything"
+        echo "  config    Edit system configuration"
+        echo "  log       View service logs"
+        echo "  camera    Show camera information"
+        echo "  audio     Show audio device info"
+        echo "  version   Show version info"
+        echo "  help      Show this help"
+        ;;
+    *)
+        echo "WeirdOS v${VERSION}"
+        echo "Run 'weirdos help' for usage info"
+        ;;
+esac

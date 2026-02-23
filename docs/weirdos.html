@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WeirdOS — Dedicated Synth Appliance</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #06060a;
+    --panel: #0a0a12;
+    --border: #1a1a2a;
+    --phosphor: #5cffb0;
+    --phosphor-dim: #2a7a50;
+    --text: #9999bb;
+    --text-dim: #555570;
+    --text-bright: #ccccdd;
+    --green: #5cffb0;
+    --card-bg: #0d0d18;
+    --code-bg: #0c0c16;
+  }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Share Tech Mono', 'Courier New', monospace;
+    min-height: 100vh;
+  }
+  a { color: var(--phosphor); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  body::after {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px);
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* Nav */
+  .site-nav {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    padding: 16px 40px;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .site-nav .brand { color: var(--phosphor); font-size: 14px; letter-spacing: 3px; font-weight: bold; }
+  .site-nav a { color: var(--text-dim); font-size: 12px; letter-spacing: 1px; }
+  .site-nav a:hover { color: var(--phosphor); text-decoration: none; }
+  .site-nav a.active { color: var(--phosphor); }
+  .nav-links { display: flex; gap: 28px; margin-left: auto; }
+
+  /* Hero */
+  .hero {
+    padding: 80px 40px 60px;
+    max-width: 900px;
+    margin: 0 auto;
+    text-align: center;
+    position: relative;
+  }
+  .hero-face {
+    width: 180px;
+    height: 220px;
+    margin: 0 auto 40px;
+  }
+  .badge {
+    display: inline-block;
+    border: 1px solid var(--phosphor-dim);
+    color: var(--phosphor-dim);
+    font-size: 10px;
+    letter-spacing: 3px;
+    padding: 4px 12px;
+    margin-bottom: 24px;
+  }
+  .hero h1 {
+    font-size: 52px;
+    color: var(--phosphor);
+    letter-spacing: 10px;
+    margin-bottom: 8px;
+  }
+  .hero .version {
+    color: var(--phosphor-dim);
+    font-size: 14px;
+    letter-spacing: 4px;
+    margin-bottom: 24px;
+  }
+  .hero p {
+    font-size: 15px;
+    color: var(--text);
+    line-height: 1.7;
+    max-width: 600px;
+    margin: 0 auto 40px;
+  }
+
+  /* Architecture diagram */
+  .arch-block {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--phosphor-dim);
+    padding: 32px;
+    max-width: 700px;
+    margin: 0 auto 60px;
+    text-align: left;
+  }
+  .arch-block pre {
+    color: var(--phosphor);
+    font-size: 12px;
+    line-height: 1.6;
+    white-space: pre;
+  }
+
+  /* Main content */
+  .content {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 40px 80px;
+  }
+  .section { margin-bottom: 60px; }
+  .section-label {
+    font-size: 10px;
+    letter-spacing: 4px;
+    color: var(--phosphor-dim);
+    margin-bottom: 20px;
+    text-transform: uppercase;
+  }
+  h2 {
+    font-size: 22px;
+    color: var(--text-bright);
+    margin-bottom: 20px;
+    letter-spacing: 2px;
+  }
+  p { line-height: 1.7; margin-bottom: 16px; }
+
+  /* Hardware grid */
+  .hw-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 16px;
+    margin: 24px 0;
+  }
+  .hw-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    padding: 20px;
+  }
+  .hw-card .hw-name {
+    color: var(--phosphor);
+    font-size: 13px;
+    margin-bottom: 6px;
+  }
+  .hw-card .hw-detail {
+    color: var(--text-dim);
+    font-size: 11px;
+    line-height: 1.5;
+  }
+  .hw-card.required { border-color: var(--phosphor-dim); }
+
+  /* Steps */
+  .step {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 32px;
+    align-items: flex-start;
+  }
+  .step-num {
+    min-width: 36px;
+    height: 36px;
+    border: 1px solid var(--phosphor-dim);
+    color: var(--phosphor);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  .step-content h3 { color: var(--text-bright); font-size: 14px; margin-bottom: 8px; }
+  .step-content p { font-size: 13px; color: var(--text); margin-bottom: 0; }
+
+  /* Code */
+  code {
+    font-family: inherit;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    padding: 1px 6px;
+    color: var(--phosphor);
+    font-size: 12px;
+  }
+  pre.code-block {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--phosphor-dim);
+    padding: 20px 24px;
+    margin: 16px 0;
+    overflow-x: auto;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--text-bright);
+  }
+  pre.code-block .comment { color: var(--text-dim); }
+  pre.code-block .cmd { color: var(--phosphor); }
+
+  /* CLI reference */
+  .cli-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+  .cli-table td { padding: 10px 16px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: top; }
+  .cli-table td:first-child { color: var(--phosphor); white-space: nowrap; width: 220px; }
+  .cli-table td:last-child { color: var(--text); }
+
+  /* Boot sequence */
+  .boot-seq {
+    position: relative;
+    padding-left: 24px;
+    margin: 24px 0;
+  }
+  .boot-seq::before {
+    content: '';
+    position: absolute;
+    left: 8px; top: 0; bottom: 0;
+    width: 1px;
+    background: var(--border);
+  }
+  .boot-item {
+    position: relative;
+    margin-bottom: 20px;
+    font-size: 13px;
+  }
+  .boot-item::before {
+    content: '▶';
+    position: absolute;
+    left: -20px;
+    color: var(--phosphor-dim);
+    font-size: 10px;
+    top: 2px;
+  }
+  .boot-item .time { color: var(--text-dim); font-size: 11px; margin-right: 12px; }
+  .boot-item .event { color: var(--text-bright); }
+  .boot-item .detail { color: var(--text-dim); font-size: 11px; margin-top: 4px; }
+
+  /* Footer */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 32px 40px;
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 12px;
+  }
+</style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <span class="brand">WEIRDSYNTHS</span>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="modules.html">Modules</a>
+    <a href="guide.html">Get Started</a>
+    <a href="weirdos.html" class="active">WeirdOS</a>
+    <a href="board.html">Dev Board</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <!-- Wireframe face SVG -->
+  <svg class="hero-face" viewBox="-100 -120 200 240" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <filter id="glow2">
+        <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="b"/>
+        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+    </defs>
+    <g filter="url(#glow2)" stroke="#5cffb0" fill="none">
+      <ellipse cx="0" cy="0" rx="72" ry="95" stroke-width="1.2" opacity="0.5"/>
+      <path d="M -56,8 Q 0,80 56,8" stroke-width="1" opacity="0.4"/>
+      <ellipse cx="-26" cy="-25" rx="17" ry="12" stroke-width="1.2" opacity="0.75"/>
+      <circle cx="-26" cy="-25" r="5" fill="#5cffb0" opacity="0.8"/>
+      <ellipse cx="26" cy="-25" rx="17" ry="12" stroke-width="1.2" opacity="0.75"/>
+      <circle cx="26" cy="-25" r="5" fill="#5cffb0" opacity="0.8"/>
+      <line x1="-42" y1="-43" x2="-11" y2="-47" stroke-width="1.5" opacity="0.6"/>
+      <line x1="11" y1="-47" x2="42" y2="-43" stroke-width="1.5" opacity="0.6"/>
+      <path d="M 0,-10 L -7,16 L 7,16" stroke-width="1" opacity="0.35"/>
+      <path d="M -22,40 Q 0,50 22,40" stroke-width="1.5" opacity="0.6"/>
+    </g>
+    <g fill="#5cffb0" opacity="0.4">
+      <circle cx="-40" cy="-65" r="2"/><circle cx="0" cy="-80" r="2"/><circle cx="40" cy="-65" r="2"/>
+      <circle cx="-62" cy="12" r="2"/><circle cx="62" cy="12" r="2"/>
+      <circle cx="0" cy="75" r="2"/>
+    </g>
+    <g stroke="#5cffb0" stroke-width="0.5" opacity="0.12">
+      <line x1="-43" y1="-25" x2="-100" y2="-25"/>
+      <line x1="43" y1="-25" x2="100" y2="-25"/>
+      <line x1="0" y1="-80" x2="0" y2="-120"/>
+      <line x1="0" y1="75" x2="0" y2="120"/>
+    </g>
+  </svg>
+
+  <div class="badge">CUSTOM LINUX DISTRO</div>
+  <h1>WeirdOS</h1>
+  <p class="version">v 0 . 1 . 0</p>
+  <p>A custom Linux distribution that boots a Raspberry Pi 5 directly into VCV Rack with the WeirdSynths plugin pre-installed and face tracking running automatically. Power on, point a camera at your face, and patch.</p>
+</section>
+
+<div class="arch-block">
+  <pre>
+┌─────────────────────────────────────────────────────┐
+│                   WeirdOS v0.1.0                    │
+├─────────────────────────────────────────────────────┤
+│  VCV Rack 2  ← NERVE / SKULL / MIRROR / VOICE       │
+├─────────────────────────────────────────────────────┤
+│  Bridge (Python + MediaPipe + OpenCV)               │
+│  UDP multicast → ports 9000 / 9001 / 9002           │
+├─────────────────────────────────────────────────────┤
+│  JACK Audio  ←  ALSA  ←  USB interface             │
+│  V4L2 Camera ←  USB webcam / Pi Camera             │
+│  Weston compositor ← DRM/KMS ← GPU                 │
+├─────────────────────────────────────────────────────┤
+│  Linux 6.x  ·  Buildroot  ·  aarch64               │
+│  Raspberry Pi 5  (Cortex-A76 · VideoCore VII)       │
+└─────────────────────────────────────────────────────┘</pre>
+</div>
+
+<div class="content">
+
+  <!-- Hardware -->
+  <section class="section">
+    <div class="section-label">Hardware</div>
+    <h2>What you need</h2>
+    <div class="hw-grid">
+      <div class="hw-card required">
+        <div class="hw-name">Raspberry Pi 5</div>
+        <div class="hw-detail">4GB or 8GB RAM<br>Required</div>
+      </div>
+      <div class="hw-card required">
+        <div class="hw-name">USB Webcam</div>
+        <div class="hw-detail">Any UVC camera<br>Required for face tracking</div>
+      </div>
+      <div class="hw-card required">
+        <div class="hw-name">Audio Interface</div>
+        <div class="hw-detail">USB class-compliant<br>Or HDMI audio out</div>
+      </div>
+      <div class="hw-card required">
+        <div class="hw-name">microSD Card</div>
+        <div class="hw-detail">16GB+, Class 10 / U3<br>Required</div>
+      </div>
+      <div class="hw-card">
+        <div class="hw-name">Display</div>
+        <div class="hw-detail">HDMI, any resolution<br>1080p recommended</div>
+      </div>
+      <div class="hw-card">
+        <div class="hw-name">USB Power</div>
+        <div class="hw-detail">USB-C, 5V 5A<br>Official Pi 5 PSU preferred</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Boot sequence -->
+  <section class="section">
+    <div class="section-label">System</div>
+    <h2>Boot sequence</h2>
+    <p>WeirdOS boots in approximately 30 seconds from power-on to playable patch.</p>
+    <div class="boot-seq">
+      <div class="boot-item">
+        <span class="time">0s</span><span class="event">Power on — kernel loads</span>
+        <div class="detail">aarch64 Linux 6.x on Cortex-A76, VideoCore VII GPU initialized</div>
+      </div>
+      <div class="boot-item">
+        <span class="time">8s</span><span class="event">JACK audio server starts</span>
+        <div class="detail">48kHz, 256 frame buffer (~5ms latency), ALSA backend</div>
+      </div>
+      <div class="boot-item">
+        <span class="time">12s</span><span class="event">Camera detected, bridge launches</span>
+        <div class="detail">MediaPipe face mesh initialized, UDP broadcast begins on ports 9000-9002</div>
+      </div>
+      <div class="boot-item">
+        <span class="time">16s</span><span class="event">Weston compositor starts</span>
+        <div class="detail">Kiosk mode — full screen, no taskbar, no window decorations</div>
+      </div>
+      <div class="boot-item">
+        <span class="time">22s</span><span class="event">VCV Rack launches</span>
+        <div class="detail">Default patch loads with NERVE, SKULL, MIRROR, VOICE pre-connected</div>
+      </div>
+      <div class="boot-item">
+        <span class="time">~30s</span><span class="event">Ready to patch</span>
+        <div class="detail">MIRROR display shows your face. NERVE outputs are live.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Build & install -->
+  <section class="section">
+    <div class="section-label">Build</div>
+    <h2>Build the image</h2>
+    <p>WeirdOS is built with Buildroot. You need a Linux x86_64 host with ~20GB free.</p>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <h3>Install dependencies</h3>
+        <p>Ubuntu/Debian build host required.</p>
+        <pre class="code-block"><span class="cmd">sudo apt install build-essential wget bc python3 \
+  cpio unzip rsync libncurses-dev</span></pre>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <h3>Clone & build</h3>
+        <p>The build script downloads Buildroot, configures it, and cross-compiles everything.</p>
+        <pre class="code-block"><span class="cmd">git clone https://github.com/dungbeetlesisyphus/WeirdSynths
+cd WeirdSynths/weirdos
+make</span>
+<span class="comment"># First build: 1-3 hours. Subsequent builds: incremental.</span></pre>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <h3>Flash to SD card</h3>
+        <pre class="code-block"><span class="cmd">make flash DEVICE=/dev/sdX</span>
+<span class="comment"># Find your SD card: diskutil list (macOS) or lsblk (Linux)</span></pre>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <h3>First boot setup</h3>
+        <p>On first boot, connect Ethernet and SSH in to complete setup:</p>
+        <pre class="code-block"><span class="cmd">ssh weird@weirdos.local</span>   <span class="comment"># password: weird</span>
+<span class="cmd">weirdos-setup</span>              <span class="comment"># configure camera, audio, install MediaPipe</span></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- CLI reference -->
+  <section class="section">
+    <div class="section-label">CLI</div>
+    <h2>weirdos command</h2>
+    <p>Manage your appliance over SSH.</p>
+    <table class="cli-table">
+      <tr><td>weirdos status</td><td>Show status of all services (VCV Rack, bridge, JACK, Weston)</td></tr>
+      <tr><td>weirdos start</td><td>Launch everything</td></tr>
+      <tr><td>weirdos stop</td><td>Stop all services</td></tr>
+      <tr><td>weirdos restart</td><td>Full restart (useful after config changes)</td></tr>
+      <tr><td>weirdos config</td><td>Edit system configuration in nano</td></tr>
+      <tr><td>weirdos log [name]</td><td>View logs: jack, bridge, vcvrack, weston</td></tr>
+      <tr><td>weirdos camera</td><td>Show camera device info and capabilities</td></tr>
+      <tr><td>weirdos audio</td><td>Show ALSA devices and JACK port list</td></tr>
+      <tr><td>weirdos-setup</td><td>Re-run the first-boot setup wizard</td></tr>
+    </table>
+  </section>
+
+  <!-- Configuration -->
+  <section class="section">
+    <div class="section-label">Configuration</div>
+    <h2>weirdos.conf</h2>
+    <p>Edit <code>/etc/weirdos/weirdos.conf</code> (or run <code>weirdos config</code>):</p>
+    <pre class="code-block">CAMERA_DEVICE="/dev/video0"    <span class="comment"># webcam device path</span>
+BRIDGE_PORT=9000               <span class="comment"># UDP port for face tracking data</span>
+
+AUDIO_DEVICE="hw:0"            <span class="comment"># ALSA device for JACK</span>
+JACK_SAMPLERATE=48000          <span class="comment"># 44100 or 48000</span>
+JACK_BUFSIZE=256               <span class="comment"># 64/128/256/512 — lower = less latency</span>
+
+MDNS_HOSTNAME="weirdos"        <span class="comment"># accessible as weirdos.local</span>
+SSH_ENABLED=true               <span class="comment"># remote access</span>
+CPU_GOVERNOR="performance"     <span class="comment"># max CPU clock</span></pre>
+
+    <p>After editing, run <code>weirdos restart</code> to apply changes.</p>
+  </section>
+
+  <!-- Source -->
+  <section class="section">
+    <div class="section-label">Source</div>
+    <h2>WeirdOS is open source</h2>
+    <p>All build configuration, init scripts, and tooling live in the <code>weirdos/</code> directory of the WeirdSynths repo. GPL-3.0 or later.</p>
+    <p><a href="https://github.com/dungbeetlesisyphus/WeirdSynths">github.com/dungbeetlesisyphus/WeirdSynths →</a></p>
+  </section>
+
+</div>
+
+<footer>
+  WeirdOS v0.1.0 — part of <a href="index.html">WeirdSynths</a> by dungbeetlesisyphus · GPL-3.0
+</footer>
+
+</body>
+</html>

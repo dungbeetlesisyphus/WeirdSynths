@@ -1,0 +1,191 @@
+{
+  "version": "2.5.2",
+  "modules": [
+    {
+      "id": 1,
+      "plugin": "WeirdSynths",
+      "model": "Nerve",
+      "version": "2.0.0",
+      "params": [
+        {"id": 0, "value": 1.0}
+      ],
+      "pos": [0, 0]
+    },
+    {
+      "id": 2,
+      "plugin": "WeirdSynths",
+      "model": "Skull",
+      "version": "2.0.0",
+      "params": [
+        {"id": 0, "value": 1.0}
+      ],
+      "pos": [8, 0]
+    },
+    {
+      "id": 3,
+      "plugin": "WeirdSynths",
+      "model": "Mirror",
+      "version": "2.0.0",
+      "params": [
+        {"id": 0, "value": 1.0},
+        {"id": 1, "value": 0.0}
+      ],
+      "pos": [16, 0]
+    },
+    {
+      "id": 4,
+      "plugin": "WeirdSynths",
+      "model": "Voice",
+      "version": "2.0.0",
+      "params": [
+        {"id": 0, "value": 1.0}
+      ],
+      "pos": [20, 0]
+    },
+    {
+      "id": 10,
+      "plugin": "Fundamental",
+      "model": "VCO",
+      "version": "2.5.0",
+      "params": [
+        {"id": 0, "value": 0.0},
+        {"id": 1, "value": 0.0},
+        {"id": 2, "value": 1.0},
+        {"id": 3, "value": 0.0},
+        {"id": 4, "value": 0.0},
+        {"id": 5, "value": 0.0},
+        {"id": 6, "value": 0.0}
+      ],
+      "pos": [26, 0]
+    },
+    {
+      "id": 11,
+      "plugin": "Fundamental",
+      "model": "VCF",
+      "version": "2.5.0",
+      "params": [
+        {"id": 0, "value": 0.7},
+        {"id": 1, "value": 0.4},
+        {"id": 2, "value": 0.0},
+        {"id": 3, "value": 1.0},
+        {"id": 4, "value": 1.0}
+      ],
+      "pos": [32, 0]
+    },
+    {
+      "id": 12,
+      "plugin": "Fundamental",
+      "model": "ADSR",
+      "version": "2.5.0",
+      "params": [
+        {"id": 0, "value": 0.1},
+        {"id": 1, "value": 0.3},
+        {"id": 2, "value": 0.7},
+        {"id": 3, "value": 0.5}
+      ],
+      "pos": [38, 0]
+    },
+    {
+      "id": 13,
+      "plugin": "Fundamental",
+      "model": "VCA-1",
+      "version": "2.5.0",
+      "params": [
+        {"id": 0, "value": 1.0}
+      ],
+      "pos": [43, 0]
+    },
+    {
+      "id": 14,
+      "plugin": "Fundamental",
+      "model": "AudioInterface",
+      "version": "2.5.0",
+      "params": [
+        {"id": 0, "value": 1.0}
+      ],
+      "pos": [46, 0]
+    }
+  ],
+  "cables": [
+    {
+      "id": 101,
+      "outputModuleId": 1,
+      "outputId": 0,
+      "inputModuleId": 10,
+      "inputId": 0,
+      "color": "#c91847"
+    },
+    {
+      "id": 102,
+      "outputModuleId": 1,
+      "outputId": 3,
+      "inputModuleId": 11,
+      "inputId": 1,
+      "color": "#0c8e15"
+    },
+    {
+      "id": 103,
+      "outputModuleId": 1,
+      "outputId": 5,
+      "inputModuleId": 12,
+      "inputId": 0,
+      "color": "#f9b500"
+    },
+    {
+      "id": 104,
+      "outputModuleId": 10,
+      "outputId": 0,
+      "inputModuleId": 11,
+      "inputId": 0,
+      "color": "#c91847"
+    },
+    {
+      "id": 105,
+      "outputModuleId": 11,
+      "outputId": 0,
+      "inputModuleId": 13,
+      "inputId": 0,
+      "color": "#0986ad"
+    },
+    {
+      "id": 106,
+      "outputModuleId": 12,
+      "outputId": 0,
+      "inputModuleId": 13,
+      "inputId": 1,
+      "color": "#f9b500"
+    },
+    {
+      "id": 107,
+      "outputModuleId": 13,
+      "outputId": 0,
+      "inputModuleId": 14,
+      "inputId": 0,
+      "color": "#0986ad"
+    },
+    {
+      "id": 108,
+      "outputModuleId": 13,
+      "outputId": 0,
+      "inputModuleId": 14,
+      "inputId": 1,
+      "color": "#0986ad"
+    },
+    {
+      "id": 201,
+      "outputModuleId": 4,
+      "outputId": 0,
+      "inputModuleId": 11,
+      "inputId": 2,
+      "color": "#8931b9"
+    },
+    {
+      "id": 202,
+      "outputModuleId": 2,
+      "outputId": 0,
+      "inputModuleId": 12,
+      "inputId": 0,
+      "color": "#c91847"
+    }
+  ]
+}

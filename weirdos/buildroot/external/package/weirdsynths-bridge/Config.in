@@ -1,0 +1,9 @@
+config BR2_PACKAGE_WEIRDSYNTHS_BRIDGE
+	bool "weirdsynths-bridge"
+	depends on BR2_PACKAGE_PYTHON3
+	depends on BR2_PACKAGE_OPENCV4
+	help
+	  WeirdSynths face tracking bridge — Python script that captures
+	  webcam frames, runs MediaPipe face mesh, and sends tracking data
+	  to VCV Rack modules via UDP.
+	  https://github.com/dungbeetlesisyphus/WeirdSynths

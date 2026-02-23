@@ -1,0 +1,12 @@
+
+    ╦ ╦╔═╗╦╦═╗╔╦╗╔═╗╔═╗
+    ║║║║╣ ║╠╦╝ ║║║ ║╚═╗
+    ╚╩╝╚═╝╩╩╚══╩╝╚═╝╚═╝
+    v0.1.0 — your face is the instrument
+
+    Commands:
+      weirdos status    — check system state
+      weirdos restart   — restart bridge + rack
+      weirdos config    — edit configuration
+      weirdos log       — view system logs
+

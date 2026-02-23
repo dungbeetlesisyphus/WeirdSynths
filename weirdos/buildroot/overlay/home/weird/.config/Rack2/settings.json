@@ -1,0 +1,38 @@
+{
+  "token": "",
+  "patchPath": "/home/weird/.config/Rack2/patches/weirdos-default.vcv",
+  "autosavePeriod": 15.0,
+  "skipLoadOnLaunch": false,
+  "moduleBrowser": {
+    "zoom": 1.0,
+    "sortId": 0,
+    "search": ""
+  },
+  "zoom": 1.0,
+  "invertZoom": false,
+  "pixelRatio": 2.0,
+  "uiTheme": "dark",
+  "cableOpacity": 0.5,
+  "cableTension": 0.75,
+  "rackBrightness": 0.9,
+  "haloBrightness": 0.25,
+  "allowCursorLock": true,
+  "knobMode": 0,
+  "knobScroll": false,
+  "sampleRate": 48000.0,
+  "threadCount": 4,
+  "tooltips": true,
+  "cpuMeter": false,
+  "lockModules": false,
+  "squeezeModules": true,
+  "preferDarkPanels": true,
+  "audio": {
+    "driver": 5,
+    "deviceName": "system",
+    "sampleRate": 48000.0,
+    "blockSize": 256,
+    "inputChannels": 2,
+    "outputChannels": 2
+  },
+  "midi": {}
+}
