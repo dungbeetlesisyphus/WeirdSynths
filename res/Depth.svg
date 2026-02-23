@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns="http://www.w3.org/2000/svg"
+   width="71.12mm"
+   height="128.5mm"
+   viewBox="0 0 71.12 128.5">
+
+  <defs>
+    <style>
+      .panel-bg    { fill: #060e10; }
+      .panel-border{ fill: none; stroke: #0a2428; stroke-width: 0.3; }
+      .label       { font-family: 'Share Tech Mono','Courier New',monospace; fill: #5599aa; font-size: 2.2px; text-anchor: middle; }
+      .label-sm    { font-family: 'Share Tech Mono','Courier New',monospace; fill: #3d7080; font-size: 1.8px; text-anchor: middle; }
+      .title       { font-family: 'Share Tech Mono','Courier New',monospace; fill: #00aacc; font-size: 4px; font-weight: bold; letter-spacing: 1px; }
+      .brand       { font-family: 'Share Tech Mono','Courier New',monospace; fill: #224450; font-size: 2px; text-anchor: end; }
+      .col-head    { font-family: 'Share Tech Mono','Courier New',monospace; fill: #007788; font-size: 2px; text-anchor: middle; letter-spacing: 0.3px; }
+      .ring        { fill: none; stroke: #00aacc; stroke-width: 0.18; }
+      .ring-dim    { fill: none; stroke: #006677; stroke-width: 0.12; }
+      .col-line    { stroke: #0a2428; stroke-width: 0.15; }
+      .knob-label  { font-family: 'Share Tech Mono','Courier New',monospace; fill: #3d7080; font-size: 1.8px; text-anchor: middle; }
+      .jack-hole   { fill: #030a0c; stroke: #0a2428; stroke-width: 0.3; }
+      .knob-hole   { fill: #030a0c; stroke: #0a2428; stroke-width: 0.3; }
+    </style>
+  </defs>
+
+  <!-- ── Background ── -->
+  <rect class="panel-bg" x="0" y="0" width="71.12" height="128.5"/>
+  <rect class="panel-border" x="0.15" y="0.15" width="70.82" height="128.2" rx="0.3"/>
+
+  <!-- ── Depth field sonar art ──
+       Concentric arcs emanating from Kinect sensor at top,
+       representing the depth field spreading into the room.
+       Centered at panel top-center (35.56, 0) -->
+  <g id="depth-field" opacity="0.22">
+    <!-- Far rings — very faint -->
+    <path class="ring-dim" d="M 2,0 A 33.56,33.56 0 0,1 69.12,0"/>
+    <path class="ring-dim" d="M 6,0 A 29.56,29.56 0 0,1 65.12,0"/>
+    <path class="ring-dim" d="M 10.5,0 A 25.06,25.06 0 0,1 60.62,0"/>
+    <!-- Mid rings -->
+    <path class="ring" d="M 15,0 A 20.56,20.56 0 0,1 56.12,0"/>
+    <path class="ring" d="M 19.5,0 A 16.06,16.06 0 0,1 51.62,0"/>
+    <!-- Near rings — brighter -->
+    <path class="ring" d="M 24,0 A 11.56,11.56 0 0,1 47.12,0" opacity="1.4"/>
+    <path class="ring" d="M 28.5,0 A 7.06,7.06 0 0,1 42.62,0" opacity="1.6"/>
+    <!-- Sensor dot -->
+    <circle cx="35.56" cy="0" r="0.8" fill="#00aacc" opacity="0.7"/>
+    <!-- Field-of-view boundary lines -->
+    <line class="ring-dim" x1="35.56" y1="0" x2="2" y2="38" opacity="0.6"/>
+    <line class="ring-dim" x1="35.56" y1="0" x2="69.12" y2="38" opacity="0.6"/>
+  </g>
+
+  <!-- ── Header ── -->
+  <text class="title" x="5" y="7">DEPTH</text>
+  <text class="brand" x="68" y="7">WeirdSynths</text>
+
+  <!-- ── Status LED placeholder (hole at 56.9mm, 8.12mm) ── -->
+  <!-- MediumLight rendered by VCV — visual indicator only -->
+  <circle cx="56.9" cy="8.12" r="1.6" fill="#001a1f" stroke="#006677" stroke-width="0.25"/>
+
+  <!-- ── Divider: header / knob ── -->
+  <line class="col-line" x1="4" y1="10.5" x2="67.12" y2="10.5"/>
+
+  <!-- ── SMOOTH knob section (centre, ~30mm) ── -->
+  <text class="knob-label" x="35.56" y="21.5">SMOOTH</text>
+  <!-- Knob hole at 35.56mm, 30.14mm (105px, 89px) -->
+  <circle class="knob-hole" cx="35.56" cy="30.14" r="4.75"/>
+  <!-- Arc decoration around knob -->
+  <path d="M 28,33 A 7.8,7.8 0 0,1 43.12,33"
+        fill="none" stroke="#006677" stroke-width="0.2" opacity="0.6"/>
+
+  <!-- ── Divider: knob / outputs ── -->
+  <line class="col-line" x1="4" y1="38.5" x2="67.12" y2="38.5"/>
+
+  <!-- ── Column headers ── -->
+  <text class="col-head" x="18.0" y="43.5">SPACE</text>
+  <text class="col-head" x="53.1" y="43.5">BODY</text>
+
+  <!-- Centre column divider -->
+  <line class="col-line" x1="35.56" y1="39" x2="35.56" y2="120"/>
+
+
+  <!-- ══════════════════════════════════════════════════════
+       OUTPUT JACKS
+       All positions in mm, matching Depth.cpp:
+         colL = 53px = 17.95mm  colR = 157px = 53.15mm
+         yStart = 142px = 48.09mm  yStep = 41px = 13.88mm
+       ══════════════════════════════════════════════════════ -->
+
+  <!-- ── Row 0 — y = 48.09mm ── -->
+  <!-- DIST -->
+  <circle class="jack-hole" cx="18.0" cy="48.09" r="4.0"/>
+  <text class="label-sm" x="18.0" cy="48.09" y="45.2">DIST</text>
+  <!-- DPTHL -->
+  <circle class="jack-hole" cx="53.1" cy="48.09" r="4.0"/>
+  <text class="label-sm" x="53.1" cy="48.09" y="45.2">DPTHL</text>
+
+  <!-- ── Row 1 — y = 61.97mm ── -->
+  <!-- MOTN -->
+  <circle class="jack-hole" cx="18.0" cy="61.97" r="4.0"/>
+  <text class="label-sm" x="18.0" y="59.1">MOTN</text>
+  <!-- DPTHR -->
+  <circle class="jack-hole" cx="53.1" cy="61.97" r="4.0"/>
+  <text class="label-sm" x="53.1" y="59.1">DPTHR</text>
+
+  <!-- ── Row 2 — y = 75.85mm ── -->
+  <!-- CNTX -->
+  <circle class="jack-hole" cx="18.0" cy="75.85" r="4.0"/>
+  <text class="label-sm" x="18.0" y="72.98">CNTX</text>
+  <!-- ENTR -->
+  <circle class="jack-hole" cx="53.1" cy="75.85" r="4.0"/>
+  <text class="label-sm" x="53.1" y="72.98">ENTR</text>
+
+  <!-- ── Row 3 — y = 89.73mm ── -->
+  <!-- CNTY -->
+  <circle class="jack-hole" cx="18.0" cy="89.73" r="4.0"/>
+  <text class="label-sm" x="18.0" y="86.86">CNTY</text>
+  <!-- BODY G -->
+  <circle class="jack-hole" cx="53.1" cy="89.73" r="4.0"/>
+  <text class="label-sm" x="53.1" y="86.86">BODY G</text>
+
+  <!-- ── Row 4 — y = 103.61mm ── -->
+  <!-- AREA -->
+  <circle class="jack-hole" cx="18.0" cy="103.61" r="4.0"/>
+  <text class="label-sm" x="18.0" y="100.74">AREA</text>
+  <!-- BODY N -->
+  <circle class="jack-hole" cx="53.1" cy="103.61" r="4.0"/>
+  <text class="label-sm" x="53.1" y="100.74">BODY N</text>
+
+  <!-- ── Bottom divider + brand ── -->
+  <line class="col-line" x1="4" y1="115" x2="67.12" y2="115"/>
+  <text class="label-sm" x="35.56" y="122">KINECT DEPTH</text>
+
+  <!-- ── Mounting screw markers (visual only) ── -->
+  <!-- VCV adds real screws via C++ — these are cosmetic guides -->
+  <circle cx="7.62"  cy="3.81"  r="1.8" fill="none" stroke="#0a2428" stroke-width="0.25" opacity="0.5"/>
+  <circle cx="63.5"  cy="3.81"  r="1.8" fill="none" stroke="#0a2428" stroke-width="0.25" opacity="0.5"/>
+  <circle cx="7.62"  cy="124.69" r="1.8" fill="none" stroke="#0a2428" stroke-width="0.25" opacity="0.5"/>
+  <circle cx="63.5"  cy="124.69" r="1.8" fill="none" stroke="#0a2428" stroke-width="0.25" opacity="0.5"/>
+
+</svg>

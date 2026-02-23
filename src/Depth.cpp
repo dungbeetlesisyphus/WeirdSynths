@@ -277,18 +277,20 @@ struct DepthWidget : ModuleWidget {
         addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
         // ── Panel layout constants ──
-        const float colL = 22.f;   // left column X
-        const float colR = 50.f;   // right column X
-        const float yStart = 52.f;
-        const float yStep  = 30.f;
+        // 14HP = 210px wide. Columns at 1/4 and 3/4 width.
+        // All values in VCV px (1mm = 2.9528px)
+        const float colL   = 53.f;   // left column  X  (~18mm)
+        const float colR   = 157.f;  // right column X  (~53mm)
+        const float yStart = 142.f;  // first jack row  (~48mm)
+        const float yStep  = 41.f;   // row spacing     (~14mm = 2HP+)
 
-        // ── Smooth knob ──
+        // ── Smooth knob — centre, upper section ──
         addParam(createParamCentered<RoundBlackKnob>(
-            Vec(box.size.x / 2.f, 32.f), module, Depth::SMOOTH_PARAM));
+            Vec(box.size.x / 2.f, 89.f), module, Depth::SMOOTH_PARAM));
 
-        // ── Status RGB LED ──
+        // ── Status RGB LED — upper right ──
         addChild(createLightCentered<MediumLight<RedGreenBlueLight>>(
-            Vec(box.size.x - 14.f, 14.f), module,
+            Vec(168.f, 24.f), module,
             Depth::STATUS_LIGHT_R));
 
         // ── Outputs — left column ──

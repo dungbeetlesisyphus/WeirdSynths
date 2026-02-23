@@ -56,6 +56,16 @@
         "Utility",
         "Polyphonic"
       ]
+    },
+    {
+      "slug": "Depth",
+      "name": "DEPTH",
+      "description": "Kinect depth tracking to CV — distance, motion, centroid, area, entropy, and body count from Kinect 360/One/Azure",
+      "tags": [
+        "Controller",
+        "External",
+        "Utility"
+      ]
     }
   ]
 }
