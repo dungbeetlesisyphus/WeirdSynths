@@ -70,7 +70,7 @@ A dedicated Pi 5 + AI HAT+ running hardware-accelerated face tracking, sending d
 Requires the [VCV Rack SDK](https://vcvrack.com/downloads).
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/WeirdSynths.git
+git clone https://github.com/dungbeetlesisyphus/WeirdSynths.git
 cd WeirdSynths
 make RACK_DIR=/path/to/Rack-SDK
 ```
